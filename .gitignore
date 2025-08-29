@@ -1,0 +1,7 @@
+.env
+
+# --- sqlc ---
+/db/queries/
+/db/models/
+
+/go.sum
