@@ -1,6 +1,10 @@
 -- name: CreateUser :one
-INSERT INTO users (email, password, created_at)
-VALUES ($1, $2, NOW())
-RETURNING id, email;
+INSERT INTO users (email, password)
+VALUES ($1, $2)
+RETURNING id, email, password;
 
-SELECT * FROM users WHERE email = $1 LIMIT 1;
+-- name: GetUserByEmail :one
+SELECT id, email, password
+FROM users
+WHERE email = $1
+LIMIT 1;

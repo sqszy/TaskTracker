@@ -12,52 +12,96 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
-	"github.com/sqszy/TaskTracker/internal/db"
-	"github.com/sqszy/TaskTracker/internal/handlers"
-)
+	"github.com/redis/go-redis/v9"
 
-// Health для /healthz
-type Health struct {
-	Status string `json:"status"`
-	DB     string `json:"db"`
-}
+	appauth "github.com/sqszy/TaskTracker/internal/auth"
+	appdb "github.com/sqszy/TaskTracker/internal/db"
+	handlers "github.com/sqszy/TaskTracker/internal/handlers"
+	appmw "github.com/sqszy/TaskTracker/internal/middleware"
+)
 
 func main() {
 	_ = godotenv.Load()
 
-	port := env("PORT", "")
+	port := env("PORT", "8080")
 	dbURL := env("DB_URL", "")
-	if port == "" || dbURL == "" {
-		log.Fatal("PORT or DB_URL is not set")
+	redisAddr := env("REDIS_ADDR", "localhost:6379")
+
+	accessSecret := env("JWT_ACCESS_SECRET", "")
+	refreshSecret := env("JWT_REFRESH_SECRET", "")
+	accessTTLstr := env("JWT_ACCESS_TTL", "15m")
+	refreshTTLstr := env("JWT_REFRESH_TTL", "168h") // 7 дней
+
+	if dbURL == "" || accessSecret == "" || refreshSecret == "" {
+		log.Fatal("DB_URL, JWT_ACCESS_SECRET или JWT_REFRESH_SECRET не заданы")
+	}
+
+	accessTTL, err := time.ParseDuration(accessTTLstr)
+	if err != nil {
+		log.Fatalf("parse JWT_ACCESS_TTL: %v", err)
+	}
+	refreshTTL, err := time.ParseDuration(refreshTTLstr)
+	if err != nil {
+		log.Fatalf("parse JWT_REFRESH_TTL: %v", err)
 	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
 
-	// создаем пул соединений pgx
+	// Postgres
 	dbpool, err := pgxpool.New(ctx, dbURL)
 	if err != nil {
 		log.Fatalf("pg connect error: %v", err)
 	}
 	defer dbpool.Close()
-
 	if err := dbpool.Ping(ctx); err != nil {
 		log.Fatalf("pg ping error: %v", err)
 	}
 
-	// создаем sqlc queries напрямую с пулом pgx
-	queries := db.New(dbpool)
+	// Redis
+	rdb := redis.NewClient(&redis.Options{Addr: redisAddr})
+	if err := rdb.Ping(ctx).Err(); err != nil {
+		log.Fatalf("redis connect error: %v", err)
+	}
 
-	// роутер
+	// sqlc queries
+	queries := appdb.New(dbpool)
+
+	// auth service
+	authSvc := appauth.NewService(rdb, accessSecret, refreshSecret, accessTTL, refreshTTL)
+
+	// handlers
+	authHandler := handlers.NewAuthHandler(queries, authSvc)
+	boardHandler := handlers.NewBoardHandler(queries)
+	taskHandler := handlers.NewTaskHandler(queries)
+
 	r := chi.NewRouter()
+
 	r.Get("/healthz", func(w http.ResponseWriter, r *http.Request) {
-		h := Health{Status: "ok", DB: "up"}
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(h)
+		_ = json.NewEncoder(w).Encode(map[string]string{"status": "ok", "db": "up"})
 	})
 
-	authHandler := handlers.NewAuthHandler(queries)
+	// public routes
 	r.Post("/signup", authHandler.Signup)
+	r.Post("/login", authHandler.Login)
+	r.Post("/refresh", authHandler.Refresh)
+	r.Post("/logout", authHandler.Logout)
+
+	// protected routes
+	r.Group(func(r chi.Router) {
+		r.Use(appmw.AuthMiddleware(authSvc))
+
+		r.Get("/boards", boardHandler.GetBoards)
+		r.Post("/boards", boardHandler.CreateBoard)
+
+		r.Get("/boards/{boardID}/tasks", taskHandler.GetTasks)
+		r.Post("/boards/{boardID}/tasks", taskHandler.CreateTask)
+
+		r.Get("/protected/me", func(w http.ResponseWriter, r *http.Request) {
+			uid, _ := appmw.GetUserID(r)
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{"user_id": uid})
+		})
+	})
 
 	srv := &http.Server{
 		Addr:              ":" + port,
@@ -66,23 +110,27 @@ func main() {
 	}
 
 	go func() {
-		log.Printf("backend listening on :%s", port)
+		log.Printf("listening :%s", port)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("listen error: %v", err)
+			log.Fatalf("http server error: %v", err)
 		}
 	}()
 
 	<-ctx.Done()
-	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	_ = srv.Shutdown(shutdownCtx)
-	log.Println("server stopped")
+	_ = srv.Shutdown(context.Background())
 }
 
-// env возвращает переменную окружения или дефолт
 func env(key, def string) string {
 	if v := os.Getenv(key); v != "" {
 		return v
 	}
 	return def
+}
+
+// jsonContentType гарантирует JSON по умолчанию
+func jsonContentType(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		next.ServeHTTP(w, r)
+	})
 }

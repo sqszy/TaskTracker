@@ -10,9 +10,9 @@ import (
 )
 
 const createUser = `-- name: CreateUser :one
-INSERT INTO users (email, password, created_at)
-VALUES ($1, $2, NOW())
-RETURNING id, email
+INSERT INTO users (email, password)
+VALUES ($1, $2)
+RETURNING id, email, password
 `
 
 type CreateUserParams struct {
@@ -21,13 +21,34 @@ type CreateUserParams struct {
 }
 
 type CreateUserRow struct {
-	ID    int32
-	Email string
+	ID       int32
+	Email    string
+	Password string
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (CreateUserRow, error) {
 	row := q.db.QueryRow(ctx, createUser, arg.Email, arg.Password)
 	var i CreateUserRow
-	err := row.Scan(&i.ID, &i.Email)
+	err := row.Scan(&i.ID, &i.Email, &i.Password)
+	return i, err
+}
+
+const getUserByEmail = `-- name: GetUserByEmail :one
+SELECT id, email, password
+FROM users
+WHERE email = $1
+LIMIT 1
+`
+
+type GetUserByEmailRow struct {
+	ID       int32
+	Email    string
+	Password string
+}
+
+func (q *Queries) GetUserByEmail(ctx context.Context, email string) (GetUserByEmailRow, error) {
+	row := q.db.QueryRow(ctx, getUserByEmail, email)
+	var i GetUserByEmailRow
+	err := row.Scan(&i.ID, &i.Email, &i.Password)
 	return i, err
 }
