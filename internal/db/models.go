@@ -8,6 +8,14 @@ import (
 	"database/sql"
 )
 
+type Board struct {
+	ID        int32
+	UserID    int32
+	Name      string
+	CreatedAt sql.NullTime
+	UpdatedAt sql.NullTime
+}
+
 type Task struct {
 	ID          int32
 	UserID      int32
@@ -16,6 +24,7 @@ type Task struct {
 	Status      sql.NullString
 	CreatedAt   sql.NullTime
 	UpdatedAt   sql.NullTime
+	BoardID     sql.NullInt32
 }
 
 type User struct {

@@ -11,19 +11,19 @@ import (
 )
 
 const createTask = `-- name: CreateTask :one
-INSERT INTO tasks (user_id, title, description)
+INSERT INTO tasks (board_id, title, description)
 VALUES ($1, $2, $3)
-RETURNING id, user_id, title, description, status, created_at, updated_at
+RETURNING id, user_id, title, description, status, created_at, updated_at, board_id
 `
 
 type CreateTaskParams struct {
-	UserID      int32
+	BoardID     sql.NullInt32
 	Title       string
 	Description sql.NullString
 }
 
 func (q *Queries) CreateTask(ctx context.Context, arg CreateTaskParams) (Task, error) {
-	row := q.db.QueryRowContext(ctx, createTask, arg.UserID, arg.Title, arg.Description)
+	row := q.db.QueryRowContext(ctx, createTask, arg.BoardID, arg.Title, arg.Description)
 	var i Task
 	err := row.Scan(
 		&i.ID,
@@ -33,16 +33,18 @@ func (q *Queries) CreateTask(ctx context.Context, arg CreateTaskParams) (Task, e
 		&i.Status,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.BoardID,
 	)
 	return i, err
 }
 
-const listTasks = `-- name: ListTasks :many
-SELECT id, user_id, title, description, status, created_at, updated_at FROM tasks WHERE user_id = $1 ORDER BY created_at DESC
+const getTasks = `-- name: GetTasks :many
+SELECT id, user_id, title, description, status, created_at, updated_at, board_id FROM tasks
+WHERE board_id = $1
 `
 
-func (q *Queries) ListTasks(ctx context.Context, userID int32) ([]Task, error) {
-	rows, err := q.db.QueryContext(ctx, listTasks, userID)
+func (q *Queries) GetTasks(ctx context.Context, boardID sql.NullInt32) ([]Task, error) {
+	rows, err := q.db.QueryContext(ctx, getTasks, boardID)
 	if err != nil {
 		return nil, err
 	}
@@ -58,6 +60,7 @@ func (q *Queries) ListTasks(ctx context.Context, userID int32) ([]Task, error) {
 			&i.Status,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.BoardID,
 		); err != nil {
 			return nil, err
 		}
