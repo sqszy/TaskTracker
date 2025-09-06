@@ -12,6 +12,8 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
+	"github.com/sqszy/TaskTracker/db"
+	"github.com/sqszy/TaskTracker/internal/handlers"
 )
 
 type Health struct {
@@ -38,12 +40,17 @@ func main() {
 		log.Fatalf("pg ping error: %v", err)
 	}
 
+	queries := db.New(dbpool)
+
 	r := chi.NewRouter()
 	r.Get("/healthz", func(w http.ResponseWriter, r *http.Request) {
 		h := Health{Status: "ok", DB: "up"}
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(h)
 	})
+
+	authHandler := handlers.NewAuthHandler(queries)
+	r.Post("/signup", authHandler.Signup)
 
 	srv := &http.Server{
 		Addr:              ":" + port,
