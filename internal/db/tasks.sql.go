@@ -7,7 +7,8 @@ package db
 
 import (
 	"context"
-	"database/sql"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createTask = `-- name: CreateTask :one
@@ -17,13 +18,13 @@ RETURNING id, user_id, title, description, status, created_at, updated_at, board
 `
 
 type CreateTaskParams struct {
-	BoardID     sql.NullInt32
+	BoardID     pgtype.Int4
 	Title       string
-	Description sql.NullString
+	Description pgtype.Text
 }
 
 func (q *Queries) CreateTask(ctx context.Context, arg CreateTaskParams) (Task, error) {
-	row := q.db.QueryRowContext(ctx, createTask, arg.BoardID, arg.Title, arg.Description)
+	row := q.db.QueryRow(ctx, createTask, arg.BoardID, arg.Title, arg.Description)
 	var i Task
 	err := row.Scan(
 		&i.ID,
@@ -43,8 +44,8 @@ SELECT id, user_id, title, description, status, created_at, updated_at, board_id
 WHERE board_id = $1
 `
 
-func (q *Queries) GetTasks(ctx context.Context, boardID sql.NullInt32) ([]Task, error) {
-	rows, err := q.db.QueryContext(ctx, getTasks, boardID)
+func (q *Queries) GetTasks(ctx context.Context, boardID pgtype.Int4) ([]Task, error) {
+	rows, err := q.db.Query(ctx, getTasks, boardID)
 	if err != nil {
 		return nil, err
 	}
@@ -65,9 +66,6 @@ func (q *Queries) GetTasks(ctx context.Context, boardID sql.NullInt32) ([]Task, 
 			return nil, err
 		}
 		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err

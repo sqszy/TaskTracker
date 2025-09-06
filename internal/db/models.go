@@ -5,31 +5,31 @@
 package db
 
 import (
-	"database/sql"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Board struct {
 	ID        int32
 	UserID    int32
 	Name      string
-	CreatedAt sql.NullTime
-	UpdatedAt sql.NullTime
+	CreatedAt pgtype.Timestamp
+	UpdatedAt pgtype.Timestamp
 }
 
 type Task struct {
 	ID          int32
 	UserID      int32
 	Title       string
-	Description sql.NullString
-	Status      sql.NullString
-	CreatedAt   sql.NullTime
-	UpdatedAt   sql.NullTime
-	BoardID     sql.NullInt32
+	Description pgtype.Text
+	Status      pgtype.Text
+	CreatedAt   pgtype.Timestamp
+	UpdatedAt   pgtype.Timestamp
+	BoardID     pgtype.Int4
 }
 
 type User struct {
 	ID        int32
 	Email     string
 	Password  string
-	CreatedAt sql.NullTime
+	CreatedAt pgtype.Timestamp
 }

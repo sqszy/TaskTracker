@@ -21,7 +21,7 @@ type CreateBoardParams struct {
 }
 
 func (q *Queries) CreateBoard(ctx context.Context, arg CreateBoardParams) (Board, error) {
-	row := q.db.QueryRowContext(ctx, createBoard, arg.Name, arg.UserID)
+	row := q.db.QueryRow(ctx, createBoard, arg.Name, arg.UserID)
 	var i Board
 	err := row.Scan(
 		&i.ID,
@@ -39,7 +39,7 @@ WHERE user_id = $1
 `
 
 func (q *Queries) GetBoards(ctx context.Context, userID int32) ([]Board, error) {
-	rows, err := q.db.QueryContext(ctx, getBoards, userID)
+	rows, err := q.db.Query(ctx, getBoards, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -57,9 +57,6 @@ func (q *Queries) GetBoards(ctx context.Context, userID int32) ([]Board, error) 
 			return nil, err
 		}
 		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err

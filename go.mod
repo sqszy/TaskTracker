@@ -1,4 +1,4 @@
-module github.com/sqszy/task-tracker
+module github.com/sqszy/TaskTracker
 
 go 1.24.4
 

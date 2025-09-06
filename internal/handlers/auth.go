@@ -1,12 +1,12 @@
 package handlers
 
 import (
-	"context"
+	//"context"
+	// "time"
 	"encoding/json"
 	"net/http"
-	"time"
 
-	"github.com/sqszy/TaskTracker/db"
+	"github.com/sqszy/TaskTracker/internal/db"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -50,8 +50,8 @@ func (h *AuthHandler) Signup(w http.ResponseWriter, r *http.Request) {
 
 	// Создаём пользователя в базе
 	user, err := h.queries.CreateUser(r.Context(), db.CreateUserParams{
-		Email:        req.Email,
-		PasswordHash: string(hash),
+		Email:    req.Email,
+		Password: string(hash),
 	})
 	if err != nil {
 		http.Error(w, "user already exists", http.StatusConflict)

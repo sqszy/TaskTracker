@@ -12,10 +12,11 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
-	"github.com/sqszy/TaskTracker/db"
+	"github.com/sqszy/TaskTracker/internal/db"
 	"github.com/sqszy/TaskTracker/internal/handlers"
 )
 
+// Health для /healthz
 type Health struct {
 	Status string `json:"status"`
 	DB     string `json:"db"`
@@ -24,12 +25,16 @@ type Health struct {
 func main() {
 	_ = godotenv.Load()
 
-	port := env("PORT", "8080")
-	dbURL := env("DB_URL", "postgres://app:secret@localhost:5432/tasktracker?sslmode=disable")
+	port := env("PORT", "")
+	dbURL := env("DB_URL", "")
+	if port == "" || dbURL == "" {
+		log.Fatal("PORT or DB_URL is not set")
+	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
 
+	// создаем пул соединений pgx
 	dbpool, err := pgxpool.New(ctx, dbURL)
 	if err != nil {
 		log.Fatalf("pg connect error: %v", err)
@@ -40,8 +45,10 @@ func main() {
 		log.Fatalf("pg ping error: %v", err)
 	}
 
+	// создаем sqlc queries напрямую с пулом pgx
 	queries := db.New(dbpool)
 
+	// роутер
 	r := chi.NewRouter()
 	r.Get("/healthz", func(w http.ResponseWriter, r *http.Request) {
 		h := Health{Status: "ok", DB: "up"}
@@ -72,6 +79,7 @@ func main() {
 	log.Println("server stopped")
 }
 
+// env возвращает переменную окружения или дефолт
 func env(key, def string) string {
 	if v := os.Getenv(key); v != "" {
 		return v
