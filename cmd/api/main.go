@@ -77,6 +77,9 @@ func main() {
 
 	r := chi.NewRouter()
 
+	// Logger middleware
+	r.Use(RequestLogger)
+
 	r.Get("/healthz", func(w http.ResponseWriter, r *http.Request) {
 		_ = json.NewEncoder(w).Encode(map[string]string{"status": "ok", "db": "up"})
 	})
@@ -91,11 +94,11 @@ func main() {
 	r.Group(func(r chi.Router) {
 		r.Use(appmw.AuthMiddleware(authSvc))
 
-		r.Get("/boards", boardHandler.GetBoards)
-		r.Post("/boards", boardHandler.CreateBoard)
+		r.Get("/GetBoards", boardHandler.GetBoards)
+		r.Post("/CreateBoard", boardHandler.CreateBoard)
 
-		r.Get("/boards/{boardID}/tasks", taskHandler.GetTasks)
-		r.Post("/boards/{boardID}/tasks", taskHandler.CreateTask)
+		r.Get("/boards/{boardID}/GetTasks", taskHandler.GetTasks)
+		r.Post("/boards/{boardID}/CreateTasks", taskHandler.CreateTask)
 
 		r.Get("/protected/me", func(w http.ResponseWriter, r *http.Request) {
 			uid, _ := appmw.GetUserID(r)
@@ -132,5 +135,19 @@ func jsonContentType(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		next.ServeHTTP(w, r)
+	})
+}
+
+// RequestLogger логирует входящие запросы
+func RequestLogger(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
+		log.Printf("[Request] %s %s started", r.Method, r.URL.Path)
+
+		// Запускаем следующий хендлер
+		next.ServeHTTP(w, r)
+
+		duration := time.Since(start)
+		log.Printf("[Request] %s %s completed in %v", r.Method, r.URL.Path, duration)
 	})
 }

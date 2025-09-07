@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -57,6 +58,7 @@ func (h *TaskHandler) CreateTask(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
+	log.Println("[CreateTask] task created:", task.ID, "in board", boardID, "by user", userID)
 	_ = json.NewEncoder(w).Encode(task)
 }
 
@@ -76,5 +78,6 @@ func (h *TaskHandler) GetTasks(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
+	log.Println("[GetTasks] done")
 	_ = json.NewEncoder(w).Encode(tasks)
 }

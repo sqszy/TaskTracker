@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 
 	"github.com/sqszy/TaskTracker/internal/db"
@@ -43,6 +44,7 @@ func (h *BoardHandler) CreateBoard(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
+	log.Println("[CreateBoard] board created:", board.ID, "by user", userID)
 	json.NewEncoder(w).Encode(board)
 }
 
@@ -60,5 +62,6 @@ func (h *BoardHandler) GetBoards(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
+	log.Println("[GetBoard] by user", userID)
 	json.NewEncoder(w).Encode(boards)
 }

@@ -2,9 +2,11 @@ package handlers
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"strings"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/sqszy/TaskTracker/internal/auth"
 	"github.com/sqszy/TaskTracker/internal/db"
 	"golang.org/x/crypto/bcrypt"
@@ -20,10 +22,9 @@ func NewAuthHandler(q *db.Queries, a *auth.Service) *AuthHandler {
 }
 
 type SignupRequest struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	Email    string `json:"email" validate:"required,email"`
+	Password string `json:"password" validate:"required,min=6"`
 }
-
 type SignupResponse struct {
 	ID    int32  `json:"id"`
 	Email string `json:"email"`
@@ -45,16 +46,22 @@ type RefreshRequest struct {
 }
 
 func (h *AuthHandler) Signup(w http.ResponseWriter, r *http.Request) {
+	log.Println("Signup called")
+
 	var req SignupRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "invalid request", http.StatusBadRequest)
 		return
 	}
+	validate := validator.New()
+	// Валидация email и пароля
 	req.Email = strings.TrimSpace(strings.ToLower(req.Email))
-	if req.Email == "" || len(req.Password) < 6 {
+	if err := validate.Struct(req); err != nil {
+		log.Println("Validation failed:", err)
 		http.Error(w, "invalid email or password too short", http.StatusBadRequest)
 		return
 	}
+
 	hash, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
 		http.Error(w, "internal error", http.StatusInternalServerError)
@@ -65,14 +72,18 @@ func (h *AuthHandler) Signup(w http.ResponseWriter, r *http.Request) {
 		Password: string(hash),
 	})
 	if err != nil {
+		log.Println("User already exists:")
 		http.Error(w, "user already exists", http.StatusConflict)
 		return
 	}
 	resp := SignupResponse{ID: user.ID, Email: user.Email}
+	log.Println("User signed up:", user.Email)
 	json.NewEncoder(w).Encode(resp)
 }
 
 func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
+	log.Println("Login called")
+
 	var req LoginRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "invalid request", http.StatusBadRequest)
@@ -95,10 +106,13 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	resp := LoginResponse{AccessToken: tp.AccessToken, RefreshToken: tp.RefreshToken, ExpiresIn: tp.ExpiresIn}
+	log.Println("User logged in:", req.Email)
 	json.NewEncoder(w).Encode(resp)
 }
 
 func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
+	log.Println("Refresh called")
+
 	var req RefreshRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "invalid request", http.StatusBadRequest)
@@ -109,10 +123,13 @@ func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid refresh token", http.StatusUnauthorized)
 		return
 	}
+	log.Println("Refresh done")
 	json.NewEncoder(w).Encode(tp)
 }
 
 func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
+	log.Println("Logout called")
+
 	var req RefreshRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "invalid request", http.StatusBadRequest)
@@ -122,5 +139,7 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "cannot revoke token", http.StatusInternalServerError)
 		return
 	}
-	w.WriteHeader(http.StatusNoContent)
+	log.Println("Logout done")
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]bool{"success": true})
 }
