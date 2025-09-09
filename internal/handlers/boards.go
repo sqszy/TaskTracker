@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/sqszy/TaskTracker/internal/db"
 	"github.com/sqszy/TaskTracker/internal/middleware"
@@ -15,6 +16,14 @@ type BoardHandler struct {
 
 func NewBoardHandler(q *db.Queries) *BoardHandler {
 	return &BoardHandler{queries: q}
+}
+
+type BoardDTO struct {
+	ID        int32     `json:"id"`
+	UserID    int32     `json:"user_id"`
+	Name      string    `json:"name"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 type CreateBoardRequest struct {
