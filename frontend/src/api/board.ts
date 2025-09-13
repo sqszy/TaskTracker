@@ -1,12 +1,9 @@
 import api from './axios'
-import type { Board } from '../types/board'
-
-export async function getBoards(): Promise<Board[]> {
-	const res = await api.get('/GetBoards')
-	return res.data
+export async function getBoards() {
+	const r = await api.get('/GetBoards')
+	return r.data
 }
-
 export async function createBoard(name: string) {
-	const res = await api.post('/CreateBoard', { name })
-	return res.data
+	const r = await api.post('/CreateBoard', { name })
+	return r.data
 }

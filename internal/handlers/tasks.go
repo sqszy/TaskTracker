@@ -9,6 +9,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/sqszy/TaskTracker/internal/db"
+	"github.com/sqszy/TaskTracker/internal/dto"
 	"github.com/sqszy/TaskTracker/internal/middleware"
 )
 
@@ -18,11 +19,6 @@ type TaskHandler struct {
 
 func NewTaskHandler(q *db.Queries) *TaskHandler {
 	return &TaskHandler{queries: q}
-}
-
-type CreateTaskRequest struct {
-	Title       string `json:"title"`
-	Description string `json:"description"`
 }
 
 // POST /boards/{boardID}/tasks
@@ -40,7 +36,7 @@ func (h *TaskHandler) CreateTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var req CreateTaskRequest
+	var req dto.CreateTaskRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.Title == "" {
 		http.Error(w, "invalid request", http.StatusBadRequest)
 		return
@@ -57,9 +53,19 @@ func (h *TaskHandler) CreateTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	resp := dto.TaskDTO{
+		ID:          task.ID,
+		BoardID:     task.BoardID.Int32,
+		UserID:      task.UserID,
+		Title:       task.Title,
+		Description: task.Description.String,
+		CreatedAt:   task.CreatedAt.Time,
+		UpdatedAt:   task.UpdatedAt.Time,
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	log.Println("[CreateTask] task created:", task.ID, "in board", boardID, "by user", userID)
-	_ = json.NewEncoder(w).Encode(task)
+	_ = json.NewEncoder(w).Encode(resp)
 }
 
 // GET /boards/{boardID}/tasks
@@ -77,7 +83,20 @@ func (h *TaskHandler) GetTasks(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var resp []dto.TaskDTO
+	for _, t := range tasks {
+		resp = append(resp, dto.TaskDTO{
+			ID:          t.ID,
+			BoardID:     t.BoardID.Int32,
+			UserID:      t.UserID,
+			Title:       t.Title,
+			Description: t.Description.String,
+			CreatedAt:   t.CreatedAt.Time,
+			UpdatedAt:   t.UpdatedAt.Time,
+		})
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	log.Println("[GetTasks] done")
-	_ = json.NewEncoder(w).Encode(tasks)
+	_ = json.NewEncoder(w).Encode(resp)
 }

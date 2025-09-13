@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
-	"time"
 
 	"github.com/sqszy/TaskTracker/internal/db"
+	"github.com/sqszy/TaskTracker/internal/dto"
 	"github.com/sqszy/TaskTracker/internal/middleware"
 )
 
@@ -18,20 +18,8 @@ func NewBoardHandler(q *db.Queries) *BoardHandler {
 	return &BoardHandler{queries: q}
 }
 
-type BoardDTO struct {
-	ID        int32     `json:"id"`
-	UserID    int32     `json:"user_id"`
-	Name      string    `json:"name"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-}
-
-type CreateBoardRequest struct {
-	Name string `json:"name"`
-}
-
 func (h *BoardHandler) CreateBoard(w http.ResponseWriter, r *http.Request) {
-	var req CreateBoardRequest
+	var req dto.CreateBoardRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.Name == "" {
 		http.Error(w, "invalid request", http.StatusBadRequest)
 		return
@@ -49,12 +37,21 @@ func (h *BoardHandler) CreateBoard(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		http.Error(w, "cannot create board", http.StatusInternalServerError)
+		log.Println("cannot create board", err)
 		return
+	}
+
+	resp := dto.BoardDTO{
+		ID:        board.ID,
+		UserID:    board.UserID,
+		Name:      board.Name,
+		CreatedAt: board.CreatedAt.Time,
+		UpdatedAt: board.UpdatedAt.Time,
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	log.Println("[CreateBoard] board created:", board.ID, "by user", userID)
-	json.NewEncoder(w).Encode(board)
+	json.NewEncoder(w).Encode(resp)
 }
 
 func (h *BoardHandler) GetBoards(w http.ResponseWriter, r *http.Request) {
@@ -70,7 +67,18 @@ func (h *BoardHandler) GetBoards(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var resp []dto.BoardDTO
+	for _, b := range boards {
+		resp = append(resp, dto.BoardDTO{
+			ID:        b.ID,
+			UserID:    b.UserID,
+			Name:      b.Name,
+			CreatedAt: b.CreatedAt.Time,
+			UpdatedAt: b.UpdatedAt.Time,
+		})
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	log.Println("[GetBoard] by user", userID)
-	json.NewEncoder(w).Encode(boards)
+	json.NewEncoder(w).Encode(resp)
 }

@@ -9,6 +9,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/sqszy/TaskTracker/internal/auth"
 	"github.com/sqszy/TaskTracker/internal/db"
+	"github.com/sqszy/TaskTracker/internal/dto"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -21,34 +22,10 @@ func NewAuthHandler(q *db.Queries, a *auth.Service) *AuthHandler {
 	return &AuthHandler{queries: q, authSvc: a}
 }
 
-type SignupRequest struct {
-	Email    string `json:"email" validate:"required,email"`
-	Password string `json:"password" validate:"required,min=6"`
-}
-type SignupResponse struct {
-	ID    int32  `json:"id"`
-	Email string `json:"email"`
-}
-
-type LoginRequest struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
-}
-
-type LoginResponse struct {
-	AccessToken  string `json:"access_token"`
-	RefreshToken string `json:"refresh_token"`
-	ExpiresIn    int64  `json:"expires_in"`
-}
-
-type RefreshRequest struct {
-	RefreshToken string `json:"refresh_token"`
-}
-
 func (h *AuthHandler) Signup(w http.ResponseWriter, r *http.Request) {
 	log.Println("Signup called")
 
-	var req SignupRequest
+	var req dto.SignupRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "invalid request", http.StatusBadRequest)
 		return
@@ -76,7 +53,10 @@ func (h *AuthHandler) Signup(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "user already exists", http.StatusConflict)
 		return
 	}
-	resp := SignupResponse{ID: user.ID, Email: user.Email}
+	resp := dto.UserDTO{
+		ID:    user.ID,
+		Email: user.Email,
+	}
 	log.Println("User signed up:", user.Email)
 	json.NewEncoder(w).Encode(resp)
 }
@@ -84,7 +64,7 @@ func (h *AuthHandler) Signup(w http.ResponseWriter, r *http.Request) {
 func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	log.Println("Login called")
 
-	var req LoginRequest
+	var req dto.LoginRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "invalid request", http.StatusBadRequest)
 		return
@@ -105,7 +85,11 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "cannot generate token", http.StatusInternalServerError)
 		return
 	}
-	resp := LoginResponse{AccessToken: tp.AccessToken, RefreshToken: tp.RefreshToken, ExpiresIn: tp.ExpiresIn}
+	resp := dto.LoginResponse{
+		AccessToken:  tp.AccessToken,
+		RefreshToken: tp.RefreshToken,
+		ExpiresIn:    tp.ExpiresIn,
+	}
 	log.Println("User logged in:", req.Email)
 	json.NewEncoder(w).Encode(resp)
 }
@@ -113,7 +97,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 	log.Println("Refresh called")
 
-	var req RefreshRequest
+	var req dto.RefreshRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "invalid request", http.StatusBadRequest)
 		return
@@ -130,7 +114,7 @@ func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	log.Println("Logout called")
 
-	var req RefreshRequest
+	var req dto.RefreshRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "invalid request", http.StatusBadRequest)
 		return
