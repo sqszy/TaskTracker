@@ -1,0 +1,3 @@
+ALTER TABLE tasks
+	DROP COLUMN if EXISTS deadline,
+	DROP COLUMN if EXISTS priority;

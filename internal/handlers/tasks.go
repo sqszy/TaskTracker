@@ -21,7 +21,7 @@ func NewTaskHandler(q *db.Queries) *TaskHandler {
 	return &TaskHandler{queries: q}
 }
 
-// POST /boards/{boardID}/tasks
+// POST /boards/{boardID}/CreateTask
 func (h *TaskHandler) CreateTask(w http.ResponseWriter, r *http.Request) {
 	boardIDStr := chi.URLParam(r, "boardID")
 	boardID, err := strconv.Atoi(boardIDStr)
@@ -42,14 +42,33 @@ func (h *TaskHandler) CreateTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// defaults
+	status := req.Status
+	if status == "" {
+		status = "todo"
+	}
+	priority := req.Priority
+	if priority == "" {
+		priority = "medium"
+	}
+
+	var deadline pgtype.Timestamp
+	if req.Deadline != nil {
+		deadline = pgtype.Timestamp{Time: *req.Deadline, Valid: true}
+	}
+
 	task, err := h.queries.CreateTask(r.Context(), db.CreateTaskParams{
 		BoardID:     pgtype.Int4{Int32: int32(boardID), Valid: true},
 		UserID:      int32(userID),
 		Title:       req.Title,
-		Description: pgtype.Text{String: req.Description, Valid: true},
+		Description: pgtype.Text{String: req.Description, Valid: req.Description != ""},
+		Status:      pgtype.Text{String: status, Valid: true},
+		Priority:    priority,
+		Deadline:    deadline,
 	})
 	if err != nil {
 		http.Error(w, "cannot create task", http.StatusInternalServerError)
+		log.Println("cannot create task:", err)
 		return
 	}
 
@@ -59,8 +78,13 @@ func (h *TaskHandler) CreateTask(w http.ResponseWriter, r *http.Request) {
 		UserID:      task.UserID,
 		Title:       task.Title,
 		Description: task.Description.String,
+		Status:      task.Status.String,
+		Priority:    task.Priority,
 		CreatedAt:   task.CreatedAt.Time,
 		UpdatedAt:   task.UpdatedAt.Time,
+	}
+	if task.Deadline.Valid {
+		resp.Deadline = &task.Deadline.Time
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -91,6 +115,9 @@ func (h *TaskHandler) GetTasks(w http.ResponseWriter, r *http.Request) {
 			UserID:      t.UserID,
 			Title:       t.Title,
 			Description: t.Description.String,
+			Status:      t.Status.String,
+			Priority:    t.Priority,
+			Deadline:    &t.Deadline.Time,
 			CreatedAt:   t.CreatedAt.Time,
 			UpdatedAt:   t.UpdatedAt.Time,
 		})
@@ -100,3 +127,5 @@ func (h *TaskHandler) GetTasks(w http.ResponseWriter, r *http.Request) {
 	log.Println("[GetTasks] done")
 	_ = json.NewEncoder(w).Encode(resp)
 }
+
+// PATCH /boards/{boardID}/tasks/{taskID}

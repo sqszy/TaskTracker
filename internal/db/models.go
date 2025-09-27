@@ -25,6 +25,8 @@ type Task struct {
 	CreatedAt   pgtype.Timestamp
 	UpdatedAt   pgtype.Timestamp
 	BoardID     pgtype.Int4
+	Priority    string
+	Deadline    pgtype.Timestamp
 }
 
 type User struct {

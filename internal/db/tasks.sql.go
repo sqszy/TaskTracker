@@ -12,9 +12,9 @@ import (
 )
 
 const createTask = `-- name: CreateTask :one
-INSERT INTO tasks (board_id, user_id, title, description)
-VALUES ($1, $2, $3, $4)
-RETURNING id, user_id, title, description, status, created_at, updated_at, board_id
+INSERT INTO tasks (board_id, user_id, title, description, status, priority, deadline)
+VALUES ($1, $2, $3, $4, $5, $6, $7)
+RETURNING id, user_id, title, description, status, priority, deadline, created_at, updated_at, board_id
 `
 
 type CreateTaskParams struct {
@@ -22,22 +22,43 @@ type CreateTaskParams struct {
 	UserID      int32
 	Title       string
 	Description pgtype.Text
+	Status      pgtype.Text
+	Priority    string
+	Deadline    pgtype.Timestamp
 }
 
-func (q *Queries) CreateTask(ctx context.Context, arg CreateTaskParams) (Task, error) {
+type CreateTaskRow struct {
+	ID          int32
+	UserID      int32
+	Title       string
+	Description pgtype.Text
+	Status      pgtype.Text
+	Priority    string
+	Deadline    pgtype.Timestamp
+	CreatedAt   pgtype.Timestamp
+	UpdatedAt   pgtype.Timestamp
+	BoardID     pgtype.Int4
+}
+
+func (q *Queries) CreateTask(ctx context.Context, arg CreateTaskParams) (CreateTaskRow, error) {
 	row := q.db.QueryRow(ctx, createTask,
 		arg.BoardID,
 		arg.UserID,
 		arg.Title,
 		arg.Description,
+		arg.Status,
+		arg.Priority,
+		arg.Deadline,
 	)
-	var i Task
+	var i CreateTaskRow
 	err := row.Scan(
 		&i.ID,
 		&i.UserID,
 		&i.Title,
 		&i.Description,
 		&i.Status,
+		&i.Priority,
+		&i.Deadline,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.BoardID,
@@ -46,25 +67,42 @@ func (q *Queries) CreateTask(ctx context.Context, arg CreateTaskParams) (Task, e
 }
 
 const getTasks = `-- name: GetTasks :many
-SELECT id, user_id, title, description, status, created_at, updated_at, board_id FROM tasks
+SELECT id, user_id, title, description, status, priority, deadline, created_at, updated_at, board_id
+FROM tasks
 WHERE board_id = $1
+ORDER BY created_at DESC
 `
 
-func (q *Queries) GetTasks(ctx context.Context, boardID pgtype.Int4) ([]Task, error) {
+type GetTasksRow struct {
+	ID          int32
+	UserID      int32
+	Title       string
+	Description pgtype.Text
+	Status      pgtype.Text
+	Priority    string
+	Deadline    pgtype.Timestamp
+	CreatedAt   pgtype.Timestamp
+	UpdatedAt   pgtype.Timestamp
+	BoardID     pgtype.Int4
+}
+
+func (q *Queries) GetTasks(ctx context.Context, boardID pgtype.Int4) ([]GetTasksRow, error) {
 	rows, err := q.db.Query(ctx, getTasks, boardID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Task
+	var items []GetTasksRow
 	for rows.Next() {
-		var i Task
+		var i GetTasksRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.UserID,
 			&i.Title,
 			&i.Description,
 			&i.Status,
+			&i.Priority,
+			&i.Deadline,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.BoardID,
@@ -77,4 +115,63 @@ func (q *Queries) GetTasks(ctx context.Context, boardID pgtype.Int4) ([]Task, er
 		return nil, err
 	}
 	return items, nil
+}
+
+const updateTask = `-- name: UpdateTask :one
+UPDATE tasks
+SET title       = COALESCE($2, title),
+    description = COALESCE($3, description),
+    status      = COALESCE($4, status),
+    priority    = COALESCE($5, priority),
+    deadline    = COALESCE($6, deadline),
+    updated_at  = now()
+WHERE id = $1
+RETURNING id, user_id, title, description, status, priority, deadline, created_at, updated_at, board_id
+`
+
+type UpdateTaskParams struct {
+	ID          int32
+	Title       string
+	Description pgtype.Text
+	Status      pgtype.Text
+	Priority    string
+	Deadline    pgtype.Timestamp
+}
+
+type UpdateTaskRow struct {
+	ID          int32
+	UserID      int32
+	Title       string
+	Description pgtype.Text
+	Status      pgtype.Text
+	Priority    string
+	Deadline    pgtype.Timestamp
+	CreatedAt   pgtype.Timestamp
+	UpdatedAt   pgtype.Timestamp
+	BoardID     pgtype.Int4
+}
+
+func (q *Queries) UpdateTask(ctx context.Context, arg UpdateTaskParams) (UpdateTaskRow, error) {
+	row := q.db.QueryRow(ctx, updateTask,
+		arg.ID,
+		arg.Title,
+		arg.Description,
+		arg.Status,
+		arg.Priority,
+		arg.Deadline,
+	)
+	var i UpdateTaskRow
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Title,
+		&i.Description,
+		&i.Status,
+		&i.Priority,
+		&i.Deadline,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.BoardID,
+	)
+	return i, err
 }

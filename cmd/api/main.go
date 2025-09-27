@@ -109,6 +109,7 @@ func main() {
 
 		r.Get("/boards/{boardID}/GetTasks", taskHandler.GetTasks)
 		r.Post("/boards/{boardID}/CreateTasks", taskHandler.CreateTask)
+		r.Patch("/tasks/{taskID}", taskHandler.UpdateTask)
 
 		r.Get("/protected/me", func(w http.ResponseWriter, r *http.Request) {
 			uid, _ := appmw.GetUserID(r)
