@@ -66,6 +66,25 @@ func (q *Queries) CreateTask(ctx context.Context, arg CreateTaskParams) (CreateT
 	return i, err
 }
 
+const deleteTask = `-- name: DeleteTask :execrows
+DELETE FROM tasks
+WHERE id = $1 AND board_id = $2 AND user_id = $3
+`
+
+type DeleteTaskParams struct {
+	ID      int32
+	BoardID pgtype.Int4
+	UserID  int32
+}
+
+func (q *Queries) DeleteTask(ctx context.Context, arg DeleteTaskParams) (int64, error) {
+	result, err := q.db.Exec(ctx, deleteTask, arg.ID, arg.BoardID, arg.UserID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
 const getTasks = `-- name: GetTasks :many
 SELECT id, user_id, title, description, status, priority, deadline, created_at, updated_at, board_id
 FROM tasks
@@ -119,59 +138,51 @@ func (q *Queries) GetTasks(ctx context.Context, boardID pgtype.Int4) ([]GetTasks
 
 const updateTask = `-- name: UpdateTask :one
 UPDATE tasks
-SET title       = COALESCE($2, title),
-    description = COALESCE($3, description),
-    status      = COALESCE($4, status),
-    priority    = COALESCE($5, priority),
-    deadline    = COALESCE($6, deadline),
-    updated_at  = now()
-WHERE id = $1
-RETURNING id, user_id, title, description, status, priority, deadline, created_at, updated_at, board_id
+SET
+    title = COALESCE($1, title),
+    description = COALESCE($2, description),
+    status = COALESCE($3, status),
+    priority = COALESCE($4, priority),
+    deadline = COALESCE($5, deadline),
+    updated_at = now()
+WHERE id = $6 AND board_id = $7 AND user_id = $8
+RETURNING id, user_id, title, description, status, created_at, updated_at, board_id, priority, deadline
 `
 
 type UpdateTaskParams struct {
-	ID          int32
-	Title       string
+	Title       pgtype.Text
 	Description pgtype.Text
 	Status      pgtype.Text
-	Priority    string
+	Priority    pgtype.Text
 	Deadline    pgtype.Timestamp
-}
-
-type UpdateTaskRow struct {
 	ID          int32
-	UserID      int32
-	Title       string
-	Description pgtype.Text
-	Status      pgtype.Text
-	Priority    string
-	Deadline    pgtype.Timestamp
-	CreatedAt   pgtype.Timestamp
-	UpdatedAt   pgtype.Timestamp
 	BoardID     pgtype.Int4
+	UserID      int32
 }
 
-func (q *Queries) UpdateTask(ctx context.Context, arg UpdateTaskParams) (UpdateTaskRow, error) {
+func (q *Queries) UpdateTask(ctx context.Context, arg UpdateTaskParams) (Task, error) {
 	row := q.db.QueryRow(ctx, updateTask,
-		arg.ID,
 		arg.Title,
 		arg.Description,
 		arg.Status,
 		arg.Priority,
 		arg.Deadline,
+		arg.ID,
+		arg.BoardID,
+		arg.UserID,
 	)
-	var i UpdateTaskRow
+	var i Task
 	err := row.Scan(
 		&i.ID,
 		&i.UserID,
 		&i.Title,
 		&i.Description,
 		&i.Status,
-		&i.Priority,
-		&i.Deadline,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.BoardID,
+		&i.Priority,
+		&i.Deadline,
 	)
 	return i, err
 }

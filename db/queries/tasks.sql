@@ -11,11 +11,16 @@ ORDER BY created_at DESC;
 
 -- name: UpdateTask :one
 UPDATE tasks
-SET title       = COALESCE($2, title),
-    description = COALESCE($3, description),
-    status      = COALESCE($4, status),
-    priority    = COALESCE($5, priority),
-    deadline    = COALESCE($6, deadline),
-    updated_at  = now()
-WHERE id = $1
-RETURNING id, user_id, title, description, status, priority, deadline, created_at, updated_at, board_id;
+SET
+    title = COALESCE(sqlc.narg('title'), title),
+    description = COALESCE(sqlc.narg('description'), description),
+    status = COALESCE(sqlc.narg('status'), status),
+    priority = COALESCE(sqlc.narg('priority'), priority),
+    deadline = COALESCE(sqlc.narg('deadline'), deadline),
+    updated_at = now()
+WHERE id = @id AND board_id = @board_id AND user_id = @user_id
+RETURNING *;
+
+-- name: DeleteTask :execrows
+DELETE FROM tasks
+WHERE id = @id AND board_id = @board_id AND user_id = @user_id;

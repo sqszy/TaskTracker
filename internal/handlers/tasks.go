@@ -129,3 +129,116 @@ func (h *TaskHandler) GetTasks(w http.ResponseWriter, r *http.Request) {
 }
 
 // PATCH /boards/{boardID}/tasks/{taskID}
+func (h *TaskHandler) PatchTask(w http.ResponseWriter, r *http.Request) {
+	boardID, err := strconv.Atoi(chi.URLParam(r, "boardID"))
+	if err != nil {
+		http.Error(w, "invalid board id", http.StatusBadRequest)
+		return
+	}
+
+	taskID, err := strconv.Atoi(chi.URLParam(r, "taskID"))
+	if err != nil {
+		http.Error(w, "invalid task id", http.StatusBadRequest)
+		return
+	}
+
+	userID, ok := middleware.GetUserID(r)
+	if !ok {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	var req dto.UpdateTaskRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "invalid request", http.StatusBadRequest)
+		return
+	}
+
+	params := db.UpdateTaskParams{
+		ID:      int32(taskID),
+		BoardID: pgtype.Int4{Int32: int32(boardID), Valid: true},
+		UserID:  int32(userID),
+	}
+
+	if req.Title != nil {
+		params.Title = pgtype.Text{String: *req.Title, Valid: true}
+	}
+	if req.Description != nil {
+		params.Description = pgtype.Text{String: *req.Description, Valid: true}
+	}
+	if req.Status != nil {
+		params.Status = pgtype.Text{String: *req.Status, Valid: true}
+	}
+	if req.Priority != nil {
+		params.Priority = pgtype.Text{String: *req.Priority, Valid: true}
+	}
+	if req.Deadline != nil {
+		params.Deadline = pgtype.Timestamp{Time: *req.Deadline, Valid: true}
+	}
+
+	task, err := h.queries.UpdateTask(r.Context(), params)
+	if err != nil {
+		http.Error(w, "cannot update task", http.StatusInternalServerError)
+		log.Println("cannot update task:", err)
+		return
+	}
+
+	resp := dto.TaskDTO{
+		ID:          task.ID,
+		BoardID:     task.BoardID.Int32,
+		UserID:      task.UserID,
+		Title:       task.Title,
+		Description: task.Description.String,
+		Status:      task.Status.String,
+		Priority:    task.Priority,
+		CreatedAt:   task.CreatedAt.Time,
+		UpdatedAt:   task.UpdatedAt.Time,
+	}
+	if task.Deadline.Valid {
+		resp.Deadline = &task.Deadline.Time
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	log.Println("[PatchTask] is updated task:", task.ID)
+	_ = json.NewEncoder(w).Encode(resp)
+}
+
+// DELETE /boards/{boardID}/tasks/{taskID}
+func (h *TaskHandler) DeleteTask(w http.ResponseWriter, r *http.Request) {
+	boardID, err := strconv.Atoi(chi.URLParam(r, "boardID"))
+	if err != nil {
+		http.Error(w, "invalid board id", http.StatusBadRequest)
+		return
+	}
+
+	taskID, err := strconv.Atoi(chi.URLParam(r, "taskID"))
+	if err != nil {
+		http.Error(w, "invalid task id", http.StatusBadRequest)
+		return
+	}
+
+	userID, ok := middleware.GetUserID(r)
+	if !ok {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	rows, err := h.queries.DeleteTask(r.Context(), db.DeleteTaskParams{
+		ID:      int32(taskID),
+		BoardID: pgtype.Int4{Int32: int32(boardID), Valid: true},
+		UserID:  int32(userID),
+	})
+	if err != nil {
+		http.Error(w, "cannot delete task", http.StatusInternalServerError)
+		return
+	}
+
+	if rows == 0 {
+		http.Error(w, "task not found or not yours", http.StatusForbidden)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	log.Println("[DeleteTask] done for taskID:", taskID)
+	_ = json.NewEncoder(w).Encode(map[string]bool{"success": true})
+}

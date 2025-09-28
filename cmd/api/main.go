@@ -82,9 +82,9 @@ func main() {
 	r.Use(RequestLogger)
 	r.Use(jsonContentType)
 
-	// CORS — важно для разработки фронта
+	// CORS
 	r.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   []string{"http://localhost:5173"}, // адрес твоего фронта
+		AllowedOrigins:   []string{"http://localhost:5173"}, // адрес фронта
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
 		AllowCredentials: true,
@@ -105,11 +105,14 @@ func main() {
 		r.Use(appmw.AuthMiddleware(authSvc))
 
 		r.Get("/GetBoards", boardHandler.GetBoards)
-		r.Post("/CreateBoard", boardHandler.CreateBoard)
-
 		r.Get("/boards/{boardID}/GetTasks", taskHandler.GetTasks)
-		r.Post("/boards/{boardID}/CreateTasks", taskHandler.CreateTask)
-		r.Patch("/tasks/{taskID}", taskHandler.UpdateTask)
+
+		r.Post("/CreateBoard", boardHandler.CreateBoard)
+		r.Post("/boards/{boardID}/CreateTask", taskHandler.CreateTask)
+
+		r.Patch("/boards/{boardID}/tasks/{taskID}/Patch", taskHandler.PatchTask)
+
+		r.Delete("/boards/{boardID}/tasks/{taskID}/Delete", taskHandler.DeleteTask)
 
 		r.Get("/protected/me", func(w http.ResponseWriter, r *http.Request) {
 			uid, _ := appmw.GetUserID(r)
