@@ -7,6 +7,8 @@ package db
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createBoard = `-- name: CreateBoard :one
@@ -31,6 +33,24 @@ func (q *Queries) CreateBoard(ctx context.Context, arg CreateBoardParams) (Board
 		&i.UpdatedAt,
 	)
 	return i, err
+}
+
+const deleteBoard = `-- name: DeleteBoard :execrows
+DELETE FROM boards
+WHERE id = $1 AND user_id = $2
+`
+
+type DeleteBoardParams struct {
+	ID     int32
+	UserID int32
+}
+
+func (q *Queries) DeleteBoard(ctx context.Context, arg DeleteBoardParams) (int64, error) {
+	result, err := q.db.Exec(ctx, deleteBoard, arg.ID, arg.UserID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
 const getBoards = `-- name: GetBoards :many
@@ -62,4 +82,32 @@ func (q *Queries) GetBoards(ctx context.Context, userID int32) ([]Board, error) 
 		return nil, err
 	}
 	return items, nil
+}
+
+const updateBoard = `-- name: UpdateBoard :one
+UPDATE boards
+SET
+    name = COALESCE($1, name),
+    updated_at = now()
+WHERE id = $2 AND user_id = $3
+RETURNING id, user_id, name, created_at, updated_at
+`
+
+type UpdateBoardParams struct {
+	Name   pgtype.Text
+	ID     int32
+	UserID int32
+}
+
+func (q *Queries) UpdateBoard(ctx context.Context, arg UpdateBoardParams) (Board, error) {
+	row := q.db.QueryRow(ctx, updateBoard, arg.Name, arg.ID, arg.UserID)
+	var i Board
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Name,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
 }

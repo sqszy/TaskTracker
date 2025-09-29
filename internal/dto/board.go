@@ -13,3 +13,7 @@ type BoardDTO struct {
 type CreateBoardRequest struct {
 	Name string `json:"name"`
 }
+
+type UpdateBoardRequest struct {
+	Name *string `json:"name,omitempty"`
+}

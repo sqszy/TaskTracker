@@ -109,7 +109,7 @@ func (h *TaskHandler) GetTasks(w http.ResponseWriter, r *http.Request) {
 
 	var resp []dto.TaskDTO
 	for _, t := range tasks {
-		resp = append(resp, dto.TaskDTO{
+		taskDTO := dto.TaskDTO{
 			ID:          t.ID,
 			BoardID:     t.BoardID.Int32,
 			UserID:      t.UserID,
@@ -117,10 +117,16 @@ func (h *TaskHandler) GetTasks(w http.ResponseWriter, r *http.Request) {
 			Description: t.Description.String,
 			Status:      t.Status.String,
 			Priority:    t.Priority,
-			Deadline:    &t.Deadline.Time,
 			CreatedAt:   t.CreatedAt.Time,
 			UpdatedAt:   t.UpdatedAt.Time,
-		})
+		}
+		if t.Deadline.Valid {
+			taskDTO.Deadline = &t.Deadline.Time
+		} else {
+			taskDTO.Deadline = nil
+		}
+
+		resp = append(resp, taskDTO)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -239,6 +245,6 @@ func (h *TaskHandler) DeleteTask(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	log.Println("[DeleteTask] done for taskID:", taskID)
+	log.Println("[DeleteTask] deleted task:", taskID)
 	_ = json.NewEncoder(w).Encode(map[string]bool{"success": true})
 }
