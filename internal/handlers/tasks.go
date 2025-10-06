@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -89,48 +90,6 @@ func (h *TaskHandler) CreateTask(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	log.Println("[CreateTask] task created:", task.ID, "in board", boardID, "by user", userID)
-	_ = json.NewEncoder(w).Encode(resp)
-}
-
-// GET /boards/{boardID}/tasks
-func (h *TaskHandler) GetTasks(w http.ResponseWriter, r *http.Request) {
-	boardIDStr := chi.URLParam(r, "boardID")
-	boardID, err := strconv.Atoi(boardIDStr)
-	if err != nil {
-		http.Error(w, "invalid board id", http.StatusBadRequest)
-		return
-	}
-
-	tasks, err := h.queries.GetTasks(r.Context(), pgtype.Int4{Int32: int32(boardID), Valid: true})
-	if err != nil {
-		http.Error(w, "cannot fetch tasks", http.StatusInternalServerError)
-		return
-	}
-
-	var resp []dto.TaskDTO
-	for _, t := range tasks {
-		taskDTO := dto.TaskDTO{
-			ID:          t.ID,
-			BoardID:     t.BoardID.Int32,
-			UserID:      t.UserID,
-			Title:       t.Title,
-			Description: t.Description.String,
-			Status:      t.Status.String,
-			Priority:    t.Priority,
-			CreatedAt:   t.CreatedAt.Time,
-			UpdatedAt:   t.UpdatedAt.Time,
-		}
-		if t.Deadline.Valid {
-			taskDTO.Deadline = &t.Deadline.Time
-		} else {
-			taskDTO.Deadline = nil
-		}
-
-		resp = append(resp, taskDTO)
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	log.Println("[GetTasks] done")
 	_ = json.NewEncoder(w).Encode(resp)
 }
 
@@ -247,4 +206,104 @@ func (h *TaskHandler) DeleteTask(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	log.Println("[DeleteTask] deleted task:", taskID)
 	_ = json.NewEncoder(w).Encode(map[string]bool{"success": true})
+}
+
+// GET /boards/{boardID}/GetTasks
+func (h *TaskHandler) GetTasks(w http.ResponseWriter, r *http.Request) {
+	boardIDStr := chi.URLParam(r, "boardID")
+	boardID, err := strconv.Atoi(boardIDStr)
+	if err != nil {
+		http.Error(w, "invalid board id", http.StatusBadRequest)
+		return
+	}
+
+	// userID, ok := middleware.GetUserID(r)
+	// if !ok {
+	// 	http.Error(w, "unauthorized", http.StatusUnauthorized)
+	// 	return
+	// }
+
+	q := r.URL.Query()
+	search := q.Get("search")           // по title/description
+	status := q.Get("status")           // todo | in_progress | done | need_review
+	priority := q.Get("priority")       // low | medium | high
+	deadlineFilter := q.Get("deadline") // with | without | ""
+	sortBy := q.Get("sort_by")          // created | deadline
+	sortDir := q.Get("sort_dir")        // asc | desc
+
+	log.Printf("[GetTasks] boardID: %d, search: '%s', status: '%s', priority: '%s', deadline: '%s', sortBy: '%s', sortDir: '%s'",
+		boardID, search, status, priority, deadlineFilter, sortBy, sortDir)
+
+	// defaults
+	if sortBy == "" {
+		sortBy = "created"
+	}
+	if sortDir == "" {
+		sortDir = "desc"
+	}
+
+	hasDeadlineSet := false
+	var hasDeadline bool
+	switch deadlineFilter {
+	case "with":
+		hasDeadlineSet = true
+		hasDeadline = true
+	case "without":
+		hasDeadlineSet = true
+		hasDeadline = false
+	default:
+		hasDeadlineSet = false
+	}
+
+	// sort code
+	var sortCode int32
+	switch {
+	case sortBy == "created" && sortDir == "asc":
+		sortCode = 1
+	case sortBy == "deadline" && sortDir == "asc":
+		sortCode = 2
+	case sortBy == "deadline" && sortDir == "desc":
+		sortCode = 3
+	default: // created desc
+		sortCode = 0
+	}
+
+	tasks, err := h.queries.GetTasks(r.Context(), db.GetTasksParams{
+		BoardID:        pgtype.Int4{Int32: int32(boardID), Valid: true},
+		Search:         search,
+		Status:         status,
+		Priority:       priority,
+		HasDeadlineSet: hasDeadlineSet,
+		HasDeadline:    hasDeadline,
+		SortCode:       sortCode,
+	})
+	if err != nil {
+		http.Error(w, "cannot fetch tasks", http.StatusInternalServerError)
+		log.Println("GetTasks error:", err)
+		return
+	}
+
+	var resp []dto.TaskDTO
+	for _, t := range tasks {
+		var dl *time.Time
+		if t.Deadline.Valid {
+			dl = &t.Deadline.Time
+		}
+		resp = append(resp, dto.TaskDTO{
+			ID:          t.ID,
+			BoardID:     t.BoardID.Int32,
+			UserID:      t.UserID,
+			Title:       t.Title,
+			Description: t.Description.String,
+			Status:      t.Status.String,
+			Priority:    t.Priority,
+			Deadline:    dl,
+			CreatedAt:   t.CreatedAt.Time,
+			UpdatedAt:   t.UpdatedAt.Time,
+		})
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	log.Println("[GetTasks] done")
+	_ = json.NewEncoder(w).Encode(resp)
 }

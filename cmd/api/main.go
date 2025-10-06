@@ -105,14 +105,16 @@ func main() {
 		r.Use(appmw.AuthMiddleware(authSvc))
 
 		r.Get("/GetBoards", boardHandler.GetBoards)
-		r.Get("/boards/{boardID}/GetTasks", taskHandler.GetTasks)
-
 		r.Post("/CreateBoard", boardHandler.CreateBoard)
+
+		r.Patch("/boards/{boardID}", boardHandler.PatchBoard)
+		r.Delete("/boards/{boardID}", boardHandler.DeleteBoard)
+
+		r.Get("/boards/{boardID}/GetTasks", taskHandler.GetTasks)
 		r.Post("/boards/{boardID}/CreateTask", taskHandler.CreateTask)
 
-		r.Patch("/boards/{boardID}/tasks/{taskID}/Patch", taskHandler.PatchTask)
-
-		r.Delete("/boards/{boardID}/tasks/{taskID}/Delete", taskHandler.DeleteTask)
+		r.Patch("/boards/{boardID}/tasks/{taskID}", taskHandler.PatchTask)
+		r.Delete("/boards/{boardID}/tasks/{taskID}", taskHandler.DeleteTask)
 
 		r.Get("/protected/me", func(w http.ResponseWriter, r *http.Request) {
 			uid, _ := appmw.GetUserID(r)

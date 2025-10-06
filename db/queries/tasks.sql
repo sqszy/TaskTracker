@@ -4,10 +4,40 @@ VALUES ($1, $2, $3, $4, $5, $6, $7)
 RETURNING id, user_id, title, description, status, priority, deadline, created_at, updated_at, board_id;
 
 -- name: GetTasks :many
-SELECT id, user_id, title, description, status, priority, deadline, created_at, updated_at, board_id
+SELECT 
+  id, user_id, title, description, status, priority, deadline, created_at, updated_at, board_id
 FROM tasks
-WHERE board_id = $1
-ORDER BY created_at DESC;
+WHERE board_id = sqlc.arg(board_id)
+  AND (
+    COALESCE(sqlc.arg(search)::text, '') = '' OR
+    title ILIKE '%' || sqlc.arg(search)::text || '%' OR
+    description ILIKE '%' || sqlc.arg(search)::text || '%'
+  )
+  AND (
+    COALESCE(sqlc.arg(status)::text, '') = '' OR
+    status = sqlc.arg(status)
+  )
+  AND (
+    COALESCE(sqlc.arg(priority)::text, '') = '' OR
+    priority = sqlc.arg(priority)
+  )
+  AND (
+    sqlc.arg(has_deadline_set)::bool = false
+    OR (
+      sqlc.arg(has_deadline_set)::bool = true AND
+      (
+        (sqlc.arg(has_deadline)::bool = true AND deadline IS NOT NULL)
+        OR
+        (sqlc.arg(has_deadline)::bool = false AND deadline IS NULL)
+      )
+    )
+  )
+ORDER BY
+  CASE WHEN sqlc.arg(sort_code)::int = 0 THEN created_at END DESC,
+  CASE WHEN sqlc.arg(sort_code)::int = 1 THEN created_at END ASC,
+  CASE WHEN sqlc.arg(sort_code)::int = 2 THEN deadline END ASC NULLS LAST,
+  CASE WHEN sqlc.arg(sort_code)::int = 3 THEN deadline END DESC NULLS LAST,
+  created_at DESC;
 
 -- name: UpdateTask :one
 UPDATE tasks

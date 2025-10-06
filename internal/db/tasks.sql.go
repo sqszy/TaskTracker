@@ -86,11 +86,51 @@ func (q *Queries) DeleteTask(ctx context.Context, arg DeleteTaskParams) (int64, 
 }
 
 const getTasks = `-- name: GetTasks :many
-SELECT id, user_id, title, description, status, priority, deadline, created_at, updated_at, board_id
+SELECT 
+  id, user_id, title, description, status, priority, deadline, created_at, updated_at, board_id
 FROM tasks
 WHERE board_id = $1
-ORDER BY created_at DESC
+  AND (
+    COALESCE($2::text, '') = '' OR
+    title ILIKE '%' || $2::text || '%' OR
+    description ILIKE '%' || $2::text || '%'
+  )
+  AND (
+    COALESCE($3::text, '') = '' OR
+    status = $3
+  )
+  AND (
+    COALESCE($4::text, '') = '' OR
+    priority = $4
+  )
+  AND (
+    $5::bool = false
+    OR (
+      $5::bool = true AND
+      (
+        ($6::bool = true AND deadline IS NOT NULL)
+        OR
+        ($6::bool = false AND deadline IS NULL)
+      )
+    )
+  )
+ORDER BY
+  CASE WHEN $7::int = 0 THEN created_at END DESC,
+  CASE WHEN $7::int = 1 THEN created_at END ASC,
+  CASE WHEN $7::int = 2 THEN deadline END ASC NULLS LAST,
+  CASE WHEN $7::int = 3 THEN deadline END DESC NULLS LAST,
+  created_at DESC
 `
+
+type GetTasksParams struct {
+	BoardID        pgtype.Int4
+	Search         string
+	Status         string
+	Priority       string
+	HasDeadlineSet bool
+	HasDeadline    bool
+	SortCode       int32
+}
 
 type GetTasksRow struct {
 	ID          int32
@@ -105,8 +145,16 @@ type GetTasksRow struct {
 	BoardID     pgtype.Int4
 }
 
-func (q *Queries) GetTasks(ctx context.Context, boardID pgtype.Int4) ([]GetTasksRow, error) {
-	rows, err := q.db.Query(ctx, getTasks, boardID)
+func (q *Queries) GetTasks(ctx context.Context, arg GetTasksParams) ([]GetTasksRow, error) {
+	rows, err := q.db.Query(ctx, getTasks,
+		arg.BoardID,
+		arg.Search,
+		arg.Status,
+		arg.Priority,
+		arg.HasDeadlineSet,
+		arg.HasDeadline,
+		arg.SortCode,
+	)
 	if err != nil {
 		return nil, err
 	}
