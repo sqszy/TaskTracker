@@ -1,20 +1,19 @@
 import { useEffect, useState, useCallback } from 'react'
-import { useParams } from 'react-router-dom'
-import Navbar from '../components/Navbar'
+import { useParams, useNavigate } from 'react-router-dom'
 import {
 	getTasks,
-	createTask,
 	updateTask,
 	deleteTask,
 	type GetTasksParams,
 } from '../api/tasks'
-import type { Task, ViewMode, SortOption } from '../types/board'
+import type { Task, ViewMode, SortOption, TaskStatus } from '../types/board'
 import SearchBar from '../components/SearchBar'
 import FilterDropdown from '../components/FilterDropdown'
 import SortSelect from '../components/SortSelect'
 import ViewSwitch from '../components/ViewSwitch'
 import TaskCard from '../components/TaskCard'
 import KanbanColumn from '../components/KanbanColumn'
+import TaskModal from '../components/TaskModal'
 
 interface Filters {
 	status: string
@@ -22,15 +21,24 @@ interface Filters {
 	deadline: 'with' | 'without' | ''
 }
 
-const STATUS_OPTIONS = [
-	{ value: 'todo', label: 'To Do' },
-	{ value: 'in_progress', label: 'In Progress' },
-	{ value: 'need_review', label: 'Need Review' },
-	{ value: 'done', label: 'Done' },
+const STATUS_OPTIONS: { value: TaskStatus; label: string; color: string }[] = [
+	{ value: 'todo', label: 'To Do', color: 'bg-gray-100 text-gray-800' },
+	{
+		value: 'in_progress',
+		label: 'In Progress',
+		color: 'bg-blue-100 text-blue-800',
+	},
+	{
+		value: 'need_review',
+		label: 'Need Review',
+		color: 'bg-yellow-100 text-yellow-800',
+	},
+	{ value: 'done', label: 'Done', color: 'bg-green-100 text-green-800' },
 ]
 
 export default function BoardDetail() {
 	const { id } = useParams<{ id: string }>()
+	const navigate = useNavigate()
 	const boardID = Number(id)
 
 	const [tasks, setTasks] = useState<Task[]>([])
@@ -42,19 +50,15 @@ export default function BoardDetail() {
 	})
 	const [sort, setSort] = useState<SortOption>('newest')
 	const [viewMode, setViewMode] = useState<ViewMode>('board')
+	const [loading, setLoading] = useState(false)
+	const [taskModalOpen, setTaskModalOpen] = useState(false)
+	const [selectedTask, setSelectedTask] = useState<Task | null>(null)
 
-	const [newTask, setNewTask] = useState({
-		title: '',
-		description: '',
-		status: 'todo',
-		priority: 'medium',
-		deadline: '',
-	})
-
-	// Load tasks with filters
+	// Load tasks with filters - useCallback to fix dependency issue
 	const loadTasks = useCallback(async () => {
 		if (!boardID) return
 
+		setLoading(true)
 		const params: GetTasksParams = {
 			search: search || undefined,
 			status: filters.status || undefined,
@@ -72,6 +76,8 @@ export default function BoardDetail() {
 			setTasks(data)
 		} catch (err) {
 			console.error('Failed to load tasks:', err)
+		} finally {
+			setLoading(false)
 		}
 	}, [boardID, search, filters, sort])
 
@@ -79,39 +85,10 @@ export default function BoardDetail() {
 		loadTasks()
 	}, [loadTasks])
 
-	const handleCreateTask = async () => {
-		if (!newTask.title.trim()) return
-
-		try {
-			const task = await createTask(
-				boardID,
-				newTask.title.trim(),
-				newTask.description,
-				newTask.status,
-				newTask.priority,
-				newTask.deadline || undefined
-			)
-
-			setTasks(prev => [task, ...prev])
-			setNewTask({
-				title: '',
-				description: '',
-				status: 'todo',
-				priority: 'medium',
-				deadline: '',
-			})
-		} catch (err) {
-			console.error('Failed to create task:', err)
-			alert('Cannot create task')
-		}
-	}
-
 	const handleUpdateTask = async (taskId: number, updates: Partial<Task>) => {
 		try {
-			const updatedTask = await updateTask(boardID, taskId, updates)
-			setTasks(prev =>
-				prev.map(task => (task.id === taskId ? updatedTask : task))
-			)
+			await updateTask(boardID, taskId, updates)
+			loadTasks()
 		} catch (err) {
 			console.error('Failed to update task:', err)
 		}
@@ -122,126 +99,116 @@ export default function BoardDetail() {
 
 		try {
 			await deleteTask(boardID, taskId)
-			setTasks(prev => prev.filter(task => task.id !== taskId))
+			loadTasks()
 		} catch (err) {
 			console.error('Failed to delete task:', err)
 		}
+	}
+
+	const openTaskModal = (task?: Task) => {
+		setSelectedTask(task || null)
+		setTaskModalOpen(true)
 	}
 
 	// Group tasks by status for Kanban view
 	const tasksByStatus = STATUS_OPTIONS.reduce((acc, status) => {
 		acc[status.value] = tasks.filter(task => task.status === status.value)
 		return acc
-	}, {} as Record<string, Task[]>)
+	}, {} as Record<TaskStatus, Task[]>)
+
+	if (!boardID) {
+		return (
+			<div className='text-center py-12'>
+				<div className='text-2xl text-gray-500'>Board not found</div>
+				<button
+					onClick={() => navigate('/dashboard')}
+					className='mt-4 px-4 py-2 rounded-xl bg-blue-500 text-white'
+				>
+					Back to Dashboard
+				</button>
+			</div>
+		)
+	}
 
 	return (
-		<div className='min-h-screen bg-gradient-to-br from-gray-50 to-blue-50/30'>
-			<Navbar />
-
-			<main className='p-6 max-w-7xl mx-auto'>
-				{/* Header */}
-				<div className='mb-8'>
-					<h1 className='text-3xl font-bold text-gray-900 mb-2'>
-						Board {boardID}
-					</h1>
-
-					{/* Controls Bar */}
-					<div className='flex flex-wrap gap-4 items-center justify-between p-4 rounded-2xl bg-white/50 backdrop-blur-md border border-gray-200/50'>
-						<SearchBar
-							value={search}
-							onChange={setSearch}
-							placeholder='Search tasks...'
-						/>
-
-						<div className='flex items-center gap-3'>
-							<FilterDropdown filters={filters} onFiltersChange={setFilters} />
-							<SortSelect value={sort} onChange={setSort} />
-							<ViewSwitch mode={viewMode} onChange={setViewMode} />
-						</div>
+		<div className='max-w-7xl mx-auto'>
+			{/* Header */}
+			<div className='mb-8'>
+				<div className='flex justify-between items-start mb-6'>
+					<div>
+						<h1 className='text-3xl font-bold text-gray-900 mb-2'>
+							Board {boardID}
+						</h1>
+						<p className='text-gray-600'>
+							{tasks.length} task{tasks.length !== 1 ? 's' : ''} total
+						</p>
 					</div>
+
+					<button
+						onClick={() => openTaskModal()}
+						className='px-6 py-3 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 text-white font-semibold hover:shadow-lg transition-all duration-200 flex items-center gap-2'
+					>
+						<span>+</span>
+						<span>Add Task</span>
+					</button>
 				</div>
 
-				{/* Add Task Form */}
-				<div className='mb-8 p-6 rounded-2xl bg-white/70 backdrop-blur-md shadow-sm border border-gray-200/50'>
-					<h3 className='text-lg font-semibold mb-4 text-gray-900'>
-						Add New Task
-					</h3>
-					<div className='grid grid-cols-1 lg:grid-cols-5 gap-4'>
-						<input
-							value={newTask.title}
-							onChange={e =>
-								setNewTask(prev => ({ ...prev, title: e.target.value }))
-							}
-							placeholder='Task title'
-							className='lg:col-span-2 p-3 rounded-xl border border-gray-200 bg-white/70 backdrop-blur-md focus:ring-2 focus:ring-blue-500 focus:border-transparent'
-						/>
-						<input
-							value={newTask.description}
-							onChange={e =>
-								setNewTask(prev => ({ ...prev, description: e.target.value }))
-							}
-							placeholder='Description'
-							className='p-3 rounded-xl border border-gray-200 bg-white/70 backdrop-blur-md focus:ring-2 focus:ring-blue-500 focus:border-transparent'
-						/>
-						<select
-							value={newTask.status}
-							onChange={e =>
-								setNewTask(prev => ({ ...prev, status: e.target.value }))
-							}
-							className='p-3 rounded-xl border border-gray-200 bg-white/70 backdrop-blur-md focus:ring-2 focus:ring-blue-500 focus:border-transparent'
+				{/* Controls Bar */}
+				<div className='flex flex-wrap gap-4 items-center justify-between p-4 rounded-2xl bg-white/50 backdrop-blur-md border border-gray-200/50'>
+					<SearchBar
+						value={search}
+						onChange={setSearch}
+						placeholder='Search tasks...'
+					/>
+
+					<div className='flex items-center gap-3'>
+						<FilterDropdown filters={filters} onFiltersChange={setFilters} />
+						<SortSelect value={sort} onChange={setSort} />
+						<ViewSwitch mode={viewMode} onChange={setViewMode} />
+
+						<button
+							onClick={loadTasks}
+							className='p-2 rounded-xl border border-gray-200 bg-white/70 hover:bg-white/90 transition-all duration-200'
+							title='Refresh tasks'
 						>
-							{STATUS_OPTIONS.map(option => (
-								<option key={option.value} value={option.value}>
-									{option.label}
-								</option>
-							))}
-						</select>
-						<div className='flex gap-2'>
-							<input
-								type='date'
-								value={newTask.deadline}
-								onChange={e =>
-									setNewTask(prev => ({ ...prev, deadline: e.target.value }))
-								}
-								className='flex-1 p-3 rounded-xl border border-gray-200 bg-white/70 backdrop-blur-md focus:ring-2 focus:ring-blue-500 focus:border-transparent'
-							/>
-							<button
-								onClick={handleCreateTask}
-								className='px-6 py-3 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 text-white font-semibold hover:shadow-lg transition-all duration-200'
-							>
-								Add
-							</button>
-						</div>
+							🔄
+						</button>
 					</div>
 				</div>
+			</div>
 
-				{/* Tasks View */}
-				{viewMode === 'board' ? (
-					// Kanban Board View
-					<div className='flex gap-6 overflow-x-auto pb-6'>
-						{STATUS_OPTIONS.map(status => (
-							<KanbanColumn
-								key={status.value}
-								title={status.label}
-								status={status.value}
-								tasks={tasksByStatus[status.value] || []}
-								onTaskUpdate={handleUpdateTask}
-								onAddTask={status => {
-									setNewTask(prev => ({ ...prev, status }))
-									// Focus on title input
-									const titleInput = document.querySelector(
-										'input[placeholder="Task title"]'
-									) as HTMLInputElement
-									titleInput?.focus()
-								}}
-							/>
-						))}
-					</div>
-				) : (
+			{/* Loading State */}
+			{loading && (
+				<div className='text-center py-8'>
+					<div className='text-gray-600'>Loading tasks...</div>
+				</div>
+			)}
+
+			{/* Tasks View */}
+			{!loading && viewMode === 'board' ? (
+				// Kanban Board View
+				<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6'>
+					{STATUS_OPTIONS.map(status => (
+						<KanbanColumn
+							key={status.value}
+							title={status.label}
+							status={status.value}
+							tasks={tasksByStatus[status.value] || []}
+							onTaskUpdate={handleUpdateTask}
+							onTaskClick={openTaskModal}
+							onAddTask={() => openTaskModal()}
+							color={status.color}
+						/>
+					))}
+				</div>
+			) : (
+				!loading && (
 					// List/Timeline View
 					<div
 						className={`grid gap-4 ${
-							viewMode === 'list' ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-2'
+							viewMode === 'list'
+								? 'grid-cols-1'
+								: 'grid-cols-1 lg:grid-cols-2 xl:grid-cols-3'
 						}`}
 					>
 						{tasks.map(task => (
@@ -250,17 +217,44 @@ export default function BoardDetail() {
 								task={task}
 								onUpdate={handleUpdateTask}
 								onDelete={handleDeleteTask}
+								onClick={openTaskModal}
+								compact={viewMode === 'timeline'}
 							/>
 						))}
 
 						{tasks.length === 0 && (
-							<div className='col-span-full text-center py-12 text-gray-500'>
-								No tasks found. Create your first task!
+							<div className='col-span-full text-center py-12'>
+								<div className='text-4xl mb-4'>📝</div>
+								<h3 className='text-lg font-semibold text-gray-900 mb-2'>
+									No tasks yet
+								</h3>
+								<p className='text-gray-600 mb-6'>
+									Create your first task to get started
+								</p>
+								<button
+									onClick={() => openTaskModal()}
+									className='px-6 py-3 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 text-white font-semibold hover:shadow-lg transition-all duration-200'
+								>
+									Create First Task
+								</button>
 							</div>
 						)}
 					</div>
-				)}
-			</main>
+				)
+			)}
+
+			{/* Task Modal */}
+			<TaskModal
+				open={taskModalOpen}
+				onClose={() => {
+					setTaskModalOpen(false)
+					setSelectedTask(null)
+				}}
+				boardID={boardID}
+				task={selectedTask}
+				mode={selectedTask ? 'edit' : 'create'}
+				onTaskUpdate={loadTasks}
+			/>
 		</div>
 	)
 }

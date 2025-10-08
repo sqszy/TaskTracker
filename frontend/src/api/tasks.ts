@@ -23,7 +23,7 @@ export async function createTask(
 	priority: string = 'medium',
 	deadline?: string
 ) {
-	const r = await api.post(`/boards/${boardID}/CreateTasks`, {
+	const r = await api.post(`/boards/${boardID}/CreateTask`, {
 		title,
 		description,
 		status,

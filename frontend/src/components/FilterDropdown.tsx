@@ -38,60 +38,68 @@ export default function FilterDropdown({
 			</button>
 
 			{isOpen && (
-				<div className='absolute top-full right-0 mt-2 w-64 p-4 rounded-2xl bg-white/90 backdrop-blur-md shadow-xl border border-gray-200 z-50'>
-					<div className='space-y-4'>
-						{/* Status Filter */}
-						<div>
-							<label className='block text-sm font-medium text-gray-700 mb-2'>
-								Status
-							</label>
-							<select
-								value={filters.status}
-								onChange={e => updateFilter('status', e.target.value)}
-								className='w-full p-2 rounded-xl border border-gray-200 bg-white/70 backdrop-blur-md focus:ring-2 focus:ring-blue-500 focus:border-transparent'
-							>
-								<option value=''>All Statuses</option>
-								<option value='todo'>To Do</option>
-								<option value='in_progress'>In Progress</option>
-								<option value='need_review'>Need Review</option>
-								<option value='done'>Done</option>
-							</select>
-						</div>
+				<>
+					{/* Backdrop */}
+					<div
+						className='fixed inset-0 z-40'
+						onClick={() => setIsOpen(false)}
+					/>
+					{/* Dropdown */}
+					<div className='absolute top-full right-0 mt-2 w-64 p-4 rounded-2xl bg-white/90 backdrop-blur-md shadow-xl border border-gray-200 z-50'>
+						<div className='space-y-4'>
+							{/* Status Filter */}
+							<div>
+								<label className='block text-sm font-medium text-gray-700 mb-2'>
+									Status
+								</label>
+								<select
+									value={filters.status}
+									onChange={e => updateFilter('status', e.target.value)}
+									className='w-full p-2 rounded-xl border border-gray-200 bg-white/70 backdrop-blur-md focus:ring-2 focus:ring-blue-500 focus:border-transparent'
+								>
+									<option value=''>All Statuses</option>
+									<option value='todo'>To Do</option>
+									<option value='in_progress'>In Progress</option>
+									<option value='need_review'>Need Review</option>
+									<option value='done'>Done</option>
+								</select>
+							</div>
 
-						{/* Priority Filter */}
-						<div>
-							<label className='block text-sm font-medium text-gray-700 mb-2'>
-								Priority
-							</label>
-							<select
-								value={filters.priority}
-								onChange={e => updateFilter('priority', e.target.value)}
-								className='w-full p-2 rounded-xl border border-gray-200 bg-white/70 backdrop-blur-md focus:ring-2 focus:ring-blue-500 focus:border-transparent'
-							>
-								<option value=''>All Priorities</option>
-								<option value='low'>Low</option>
-								<option value='medium'>Medium</option>
-								<option value='high'>High</option>
-							</select>
-						</div>
+							{/* Priority Filter */}
+							<div>
+								<label className='block text-sm font-medium text-gray-700 mb-2'>
+									Priority
+								</label>
+								<select
+									value={filters.priority}
+									onChange={e => updateFilter('priority', e.target.value)}
+									className='w-full p-2 rounded-xl border border-gray-200 bg-white/70 backdrop-blur-md focus:ring-2 focus:ring-blue-500 focus:border-transparent'
+								>
+									<option value=''>All Priorities</option>
+									<option value='low'>Low</option>
+									<option value='medium'>Medium</option>
+									<option value='high'>High</option>
+								</select>
+							</div>
 
-						{/* Deadline Filter */}
-						<div>
-							<label className='block text-sm font-medium text-gray-700 mb-2'>
-								Deadline
-							</label>
-							<select
-								value={filters.deadline}
-								onChange={e => updateFilter('deadline', e.target.value)}
-								className='w-full p-2 rounded-xl border border-gray-200 bg-white/70 backdrop-blur-md focus:ring-2 focus:ring-blue-500 focus:border-transparent'
-							>
-								<option value=''>All Tasks</option>
-								<option value='with'>With Deadline</option>
-								<option value='without'>Without Deadline</option>
-							</select>
+							{/* Deadline Filter */}
+							<div>
+								<label className='block text-sm font-medium text-gray-700 mb-2'>
+									Deadline
+								</label>
+								<select
+									value={filters.deadline}
+									onChange={e => updateFilter('deadline', e.target.value)}
+									className='w-full p-2 rounded-xl border border-gray-200 bg-white/70 backdrop-blur-md focus:ring-2 focus:ring-blue-500 focus:border-transparent'
+								>
+									<option value=''>All Tasks</option>
+									<option value='with'>With Deadline</option>
+									<option value='without'>Without Deadline</option>
+								</select>
+							</div>
 						</div>
 					</div>
-				</div>
+				</>
 			)}
 		</div>
 	)
