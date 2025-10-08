@@ -1,4 +1,3 @@
-// src/components/BoardDetailModal.tsx
 import { useEffect, useState } from 'react'
 import Modal from './Modal'
 import { getTasks, createTask } from '../api/tasks'

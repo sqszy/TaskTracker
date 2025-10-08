@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import api from '../api/axios'
 import { useAuthStore } from '../store/auth'
 import Modal from './Modal'
+import { login } from '../api/auth'
 
 export default function LoginModal({
 	open,
@@ -14,46 +14,76 @@ export default function LoginModal({
 }) {
 	const [email, setEmail] = useState('')
 	const [password, setPassword] = useState('')
+	const [loading, setLoading] = useState(false)
 	const setTokens = useAuthStore(s => s.setTokens)
 
 	const submit = async () => {
+		if (!email || !password) {
+			alert('Please fill in all fields')
+			return
+		}
+
+		setLoading(true)
 		try {
-			const res = await api.post('/login', { email, password })
-			setTokens(res.data.access_token, res.data.refresh_token)
+			const data = await login({ email, password })
+			setTokens(data.access_token, data.refresh_token)
 			onClose()
-		} catch (e) {
+			setEmail('')
+			setPassword('')
+		} catch (e: unknown) {
 			console.error(e)
-			alert('Login failed')
+			let errorMessage = 'Login failed'
+
+			if (e && typeof e === 'object' && 'response' in e) {
+				const axiosError = e as { response?: { data?: { error?: string } } }
+				errorMessage = axiosError.response?.data?.error || errorMessage
+			}
+
+			alert(errorMessage)
+		} finally {
+			setLoading(false)
+		}
+	}
+
+	const handleKeyPress = (e: React.KeyboardEvent) => {
+		if (e.key === 'Enter') {
+			submit()
 		}
 	}
 
 	return (
 		<Modal open={open} onClose={onClose} title='Login' width='max-w-sm'>
-			<div className='space-y-3'>
+			<div className='space-y-4'>
 				<input
-					className='w-full p-2 rounded-md border bg-white/70'
+					className='w-full p-3 rounded-xl border border-gray-200 bg-white/70 backdrop-blur-md focus:ring-2 focus:ring-blue-500 focus:border-transparent'
 					type='email'
 					placeholder='Email'
 					value={email}
 					onChange={e => setEmail(e.target.value)}
+					onKeyPress={handleKeyPress}
+					disabled={loading}
 				/>
 				<input
-					className='w-full p-2 rounded-md border bg-white/70'
+					className='w-full p-3 rounded-xl border border-gray-200 bg-white/70 backdrop-blur-md focus:ring-2 focus:ring-blue-500 focus:border-transparent'
 					type='password'
 					placeholder='Password'
 					value={password}
 					onChange={e => setPassword(e.target.value)}
+					onKeyPress={handleKeyPress}
+					disabled={loading}
 				/>
 				<div className='flex gap-2'>
 					<button
 						onClick={submit}
-						className='flex-1 py-2 rounded-full bg-gradient-to-br from-sky-400 to-indigo-500 text-white shadow'
+						disabled={loading}
+						className='flex-1 py-3 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 text-white font-semibold hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed'
 					>
-						Login
+						{loading ? 'Logging in...' : 'Login'}
 					</button>
 					<button
 						onClick={openSignup}
-						className='px-4 py-2 rounded-full border bg-white/80'
+						disabled={loading}
+						className='px-4 py-3 rounded-xl border border-gray-200 bg-white/70 hover:bg-white/90 transition-all duration-200 disabled:opacity-50'
 					>
 						Sign up
 					</button>
