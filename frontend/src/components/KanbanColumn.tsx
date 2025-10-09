@@ -35,7 +35,7 @@ export default function KanbanColumn({
 
 	return (
 		<div
-			className='flex-1 min-w-80 bg-gray-50/50 rounded-2xl p-4 backdrop-blur-md border border-gray-200/50'
+			className='flex-1 min-w-80 bg-gray-50/50 rounded-2xl p-4 backdrop-blur-md border border-gray-200/50 relative z-10'
 			onDragOver={handleDragOver}
 			onDrop={handleDrop}
 		>

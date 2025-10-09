@@ -101,7 +101,7 @@ export default function TaskCard({
 
 	return (
 		<div
-			className='p-4 rounded-xl bg-white/70 backdrop-blur-md shadow-sm border border-gray-200/50 hover:shadow-md transition-all duration-200 group cursor-pointer'
+			className='p-4 rounded-2xl bg-white/20 backdrop-blur-md border border-white/30 shadow-sm hover:shadow-md transition-all duration-200 group cursor-pointer liquid-glass relative z-20'
 			onClick={handleClick}
 		>
 			{/* Header */}

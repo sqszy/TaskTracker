@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import Modal from './Modal'
 import type { Task, TaskStatus, TaskPriority } from '../types/board'
-import { createTask, updateTask } from '../api/tasks'
+import { createTask, updateTask, deleteTask } from '../api/tasks'
 import { useToast } from '../hooks/useToast'
 
 interface TaskModalProps {
@@ -11,6 +11,7 @@ interface TaskModalProps {
 	task?: Task | null
 	mode: 'create' | 'edit'
 	onTaskUpdate: () => void
+	onDelete?: (taskId: number) => void
 }
 
 export default function TaskModal({
@@ -20,6 +21,7 @@ export default function TaskModal({
 	task,
 	mode,
 	onTaskUpdate,
+	onDelete,
 }: TaskModalProps) {
 	const [formData, setFormData] = useState({
 		title: '',
@@ -93,6 +95,27 @@ export default function TaskModal({
 		}
 	}
 
+	const handleDelete = async () => {
+		if (!task || !onDelete) return
+
+		if (!window.confirm('Are you sure you want to delete this task?')) {
+			return
+		}
+
+		setLoading(true)
+		try {
+			await deleteTask(boardID, task.id)
+			addToast('Task deleted successfully', 'success')
+			onDelete(task.id)
+			onClose()
+		} catch (err: unknown) {
+			console.error('Failed to delete task:', err)
+			addToast('Failed to delete task', 'error')
+		} finally {
+			setLoading(false)
+		}
+	}
+
 	const getDeadlineColor = (deadline: string) => {
 		if (!deadline) return 'border-gray-200'
 		const now = new Date()
@@ -101,9 +124,11 @@ export default function TaskModal({
 			(deadlineDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
 		)
 
-		if (diffDays < 0) return 'border-red-200 bg-red-50/50'
-		if (diffDays <= 3) return 'border-yellow-200 bg-yellow-50/50'
-		return 'border-green-200 bg-green-50/50'
+		if (diffDays < 0)
+			return 'border-red-500 bg-red-200 text-red-900 font-semibold shadow-sm'
+		if (diffDays <= 3)
+			return 'border-yellow-500 bg-yellow-200 text-yellow-900 font-semibold shadow-sm animate-pulse'
+		return 'border-green-500 bg-green-200 text-green-900 font-semibold'
 	}
 
 	return (
@@ -113,6 +138,19 @@ export default function TaskModal({
 			title={mode === 'create' ? 'Create New Task' : 'Edit Task'}
 			width='max-w-2xl'
 		>
+			{mode === 'edit' && task && (
+				<div className='absolute top-4 right-4'>
+					<button
+						type='button'
+						onClick={handleDelete}
+						disabled={loading}
+						className='px-4 py-2 rounded-xl bg-red-500 text-white font-semibold hover:bg-red-600 transition-all duration-200 disabled:opacity-50 text-sm'
+					>
+						{loading ? 'Deleting...' : 'Delete Task'}
+					</button>
+				</div>
+			)}
+
 			<form onSubmit={handleSubmit} className='space-y-6'>
 				{/* Title */}
 				<div>

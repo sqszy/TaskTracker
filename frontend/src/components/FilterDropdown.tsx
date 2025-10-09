@@ -22,10 +22,10 @@ export default function FilterDropdown({
 	}
 
 	return (
-		<div className='relative'>
+		<div className='relative z-50'>
 			<button
 				onClick={() => setIsOpen(!isOpen)}
-				className='px-4 py-2 rounded-2xl border border-gray-200 bg-white/70 backdrop-blur-md hover:bg-white/90 transition-all duration-200 flex items-center gap-2'
+				className='px-4 py-2 rounded-2xl border border-gray-200 bg-white/70 backdrop-blur-md hover:bg-white/90 transition-all duration-200 flex items-center gap-2 relative z-50'
 			>
 				<span>Filter</span>
 				<span

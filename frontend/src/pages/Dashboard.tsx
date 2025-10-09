@@ -6,8 +6,8 @@ import { getBoards, createBoard, deleteBoard } from '../api/board'
 import type { Board } from '../types/board'
 import SearchBar from '../components/SearchBar'
 import { useAuthStore } from '../store/auth'
-import { useModal } from '../hooks/useModal'
 import { useToast } from '../hooks/useToast'
+import { useModal } from '../hooks/useModal'
 
 export default function Dashboard() {
 	const navigate = useNavigate()
@@ -24,8 +24,8 @@ export default function Dashboard() {
 	const [loading, setLoading] = useState(true)
 	const [creating, setCreating] = useState(false)
 	const token = useAuthStore(s => s.accessToken)
-	const { openLogin } = useModal()
 	const { addToast } = useToast()
+	const { openLogin } = useModal()
 
 	const loadBoards = useCallback(async () => {
 		if (!token) {
@@ -60,12 +60,16 @@ export default function Dashboard() {
 		}
 	}, [search, boards])
 
-	const handleCreateBoard = async () => {
+	const handleCreateBoardClick = () => {
 		if (!token) {
-			addToast('Please login to create a board', 'error')
+			addToast('Please login to create a board', 'info')
+			openLogin()
 			return
 		}
+		setBoardModalOpen(true)
+	}
 
+	const handleCreateBoard = async () => {
 		if (!newBoardName.trim()) {
 			addToast('Please enter a board name', 'error')
 			return
@@ -114,7 +118,8 @@ export default function Dashboard() {
 
 	const openBoardDetail = (id: number, name: string) => {
 		if (!token) {
-			addToast('Please login to view board details', 'error')
+			addToast('Please login to view board details', 'info')
+			openLogin()
 			return
 		}
 		setSelectedBoard({ id, name })
@@ -123,7 +128,8 @@ export default function Dashboard() {
 
 	const openFullBoard = (id: number) => {
 		if (!token) {
-			addToast('Please login to view boards', 'error')
+			addToast('Please login to view boards', 'info')
+			openLogin()
 			return
 		}
 		navigate(`/boards/${id}`)
@@ -160,13 +166,7 @@ export default function Dashboard() {
 							🔄 Refresh
 						</button>
 						<button
-							onClick={() => {
-								if (!token) {
-									addToast('Please login to create a board', 'error')
-									return
-								}
-								setBoardModalOpen(true)
-							}}
+							onClick={handleCreateBoardClick}
 							className='px-4 py-2 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 text-white font-semibold hover:shadow-lg transition-all duration-200 text-sm'
 						>
 							+ New Board
@@ -243,7 +243,7 @@ export default function Dashboard() {
 								You don't have any boards yet
 							</div>
 							<button
-								onClick={() => setBoardModalOpen(true)}
+								onClick={handleCreateBoardClick}
 								className='px-4 py-2 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 text-white font-semibold hover:shadow-lg transition-all duration-200 text-sm'
 							>
 								Create Your First Board
