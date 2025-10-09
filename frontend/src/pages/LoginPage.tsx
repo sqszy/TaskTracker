@@ -2,12 +2,14 @@ import { useState } from 'react'
 import api from '../api/axios'
 import { useAuthStore } from '../store/auth'
 import { useNavigate } from 'react-router-dom'
+import { useToast } from '../hooks/useToast'
 
 export default function LoginPage() {
 	const [email, setEmail] = useState('')
 	const [password, setPassword] = useState('')
 	const setTokens = useAuthStore(s => s.setTokens)
 	const navigate = useNavigate()
+	const { addToast } = useToast()
 
 	const handleLogin = async () => {
 		try {
@@ -15,7 +17,7 @@ export default function LoginPage() {
 			setTokens(res.data.access_token, res.data.refresh_token)
 			navigate('/dashboard')
 		} catch {
-			alert('Login failed')
+			addToast('Login failed', 'error')
 		}
 	}
 

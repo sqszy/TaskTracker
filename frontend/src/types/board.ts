@@ -22,5 +22,5 @@ export interface Board {
 	updated_at: string
 }
 
-export type ViewMode = 'board' | 'list' | 'timeline'
+export type ViewMode = 'board' | 'list'
 export type SortOption = 'newest' | 'oldest' | 'deadline_asc' | 'deadline_desc'

@@ -5,6 +5,7 @@ const api = axios.create({
 	baseURL: 'http://localhost:8080',
 })
 
+// Request interceptor
 api.interceptors.request.use(config => {
 	const token = useAuthStore.getState().accessToken
 	if (token && config.headers) {
@@ -13,7 +14,7 @@ api.interceptors.request.use(config => {
 	return config
 })
 
-// Add response interceptor for token refresh
+// Response interceptor for token refresh
 api.interceptors.response.use(
 	response => response,
 	async error => {
@@ -22,11 +23,19 @@ api.interceptors.response.use(
 		if (error.response?.status === 401 && !originalRequest._retry) {
 			originalRequest._retry = true
 
-			const success = await useAuthStore.getState().refreshAuth()
-			if (success) {
-				const newToken = useAuthStore.getState().accessToken
-				originalRequest.headers.Authorization = `Bearer ${newToken}`
-				return api(originalRequest)
+			try {
+				const success = await useAuthStore.getState().refreshAuth()
+				if (success) {
+					const newToken = useAuthStore.getState().accessToken
+					if (newToken) {
+						originalRequest.headers.Authorization = `Bearer ${newToken}`
+						return api(originalRequest)
+					}
+				}
+			} catch (refreshError) {
+				console.error('Token refresh failed:', refreshError)
+				useAuthStore.getState().clear()
+				window.location.href = '/dashboard'
 			}
 		}
 

@@ -1,4 +1,3 @@
-import type { Task } from '../types/board'
 import api from './axios'
 
 export interface GetTasksParams {
@@ -23,12 +22,20 @@ export async function createTask(
 	priority: string = 'medium',
 	deadline?: string
 ) {
+	// Преобразуем дедлайн в правильный формат для бекенда
+	let formattedDeadline = undefined
+	if (deadline) {
+		// Создаем Date объект и преобразуем в ISO строку
+		const date = new Date(deadline)
+		formattedDeadline = date.toISOString()
+	}
+
 	const r = await api.post(`/boards/${boardID}/CreateTask`, {
 		title,
 		description,
 		status,
 		priority,
-		deadline,
+		deadline: formattedDeadline,
 	})
 	return r.data
 }
@@ -36,9 +43,25 @@ export async function createTask(
 export async function updateTask(
 	boardID: number,
 	taskID: number,
-	updates: Partial<Task>
+	updates: {
+		title?: string
+		description?: string
+		status?: string
+		priority?: string
+		deadline?: string
+	}
 ) {
-	const r = await api.patch(`/boards/${boardID}/tasks/${taskID}`, updates)
+	// Преобразуем дедлайн в правильный формат
+	let formattedDeadline = undefined
+	if (updates.deadline) {
+		const date = new Date(updates.deadline)
+		formattedDeadline = date.toISOString()
+	}
+
+	const r = await api.patch(`/boards/${boardID}/tasks/${taskID}`, {
+		...updates,
+		deadline: formattedDeadline,
+	})
 	return r.data
 }
 

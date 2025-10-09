@@ -1,6 +1,4 @@
-import React from 'react'
-
-export type ViewMode = 'board' | 'list' | 'timeline'
+export type ViewMode = 'board' | 'list'
 
 interface ViewSwitchProps {
 	mode: ViewMode
@@ -9,9 +7,8 @@ interface ViewSwitchProps {
 
 export default function ViewSwitch({ mode, onChange }: ViewSwitchProps) {
 	const views = [
-		{ value: 'board', label: 'Board', icon: '📋' },
-		{ value: 'list', label: 'List', icon: '📝' },
-		{ value: 'timeline', label: 'Timeline', icon: '📅' },
+		{ value: 'board' as ViewMode, label: 'Board', icon: '📋' },
+		{ value: 'list' as ViewMode, label: 'List', icon: '📝' },
 	] as const
 
 	return (

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import Modal from './Modal'
 import type { Task, TaskStatus, TaskPriority } from '../types/board'
 import { createTask, updateTask } from '../api/tasks'
+import { useToast } from '../hooks/useToast'
 
 interface TaskModalProps {
 	open: boolean
@@ -28,6 +29,7 @@ export default function TaskModal({
 		deadline: '',
 	})
 	const [loading, setLoading] = useState(false)
+	const { addToast } = useToast()
 
 	useEffect(() => {
 		if (task && mode === 'edit') {
@@ -54,7 +56,7 @@ export default function TaskModal({
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault()
 		if (!formData.title.trim()) {
-			alert('Title is required')
+			addToast('Title is required', 'error')
 			return
 		}
 
@@ -69,6 +71,7 @@ export default function TaskModal({
 					formData.priority,
 					formData.deadline || undefined
 				)
+				addToast('Task created successfully', 'success')
 			} else if (task) {
 				await updateTask(boardID, task.id, {
 					title: formData.title,
@@ -77,13 +80,14 @@ export default function TaskModal({
 					priority: formData.priority,
 					deadline: formData.deadline || undefined,
 				})
+				addToast('Task updated successfully', 'success')
 			}
 
 			onTaskUpdate()
 			onClose()
-		} catch (err) {
+		} catch (err: unknown) {
 			console.error('Failed to save task:', err)
-			alert('Failed to save task')
+			addToast('Failed to save task', 'error')
 		} finally {
 			setLoading(false)
 		}
@@ -97,9 +101,9 @@ export default function TaskModal({
 			(deadlineDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
 		)
 
-		if (diffDays < 0) return 'border-red-200 bg-red-50'
-		if (diffDays <= 3) return 'border-yellow-200 bg-yellow-50'
-		return 'border-green-200 bg-green-50'
+		if (diffDays < 0) return 'border-red-200 bg-red-50/50'
+		if (diffDays <= 3) return 'border-yellow-200 bg-yellow-50/50'
+		return 'border-green-200 bg-green-50/50'
 	}
 
 	return (
@@ -205,31 +209,13 @@ export default function TaskModal({
 					</div>
 				</div>
 
-				{/* Progress Bar (for edit mode) */}
-				{mode === 'edit' && (
-					<div>
-						<label className='block text-sm font-medium text-gray-700 mb-2'>
-							Progress
-						</label>
-						<div className='w-full bg-gray-200 rounded-full h-2'>
-							<div
-								className='bg-green-500 h-2 rounded-full transition-all duration-300'
-								style={{ width: '0%' }} // You can add progress calculation later
-							/>
-						</div>
-						<div className='flex justify-between text-xs text-gray-500 mt-1'>
-							<span>0%</span>
-							<span>0/0 subtasks</span>
-						</div>
-					</div>
-				)}
-
 				{/* Actions */}
 				<div className='flex gap-3 pt-4 border-t border-gray-200'>
 					<button
 						type='button'
 						onClick={onClose}
 						className='flex-1 py-3 rounded-xl border border-gray-200 bg-white/70 hover:bg-white/90 transition-all duration-200'
+						disabled={loading}
 					>
 						Cancel
 					</button>

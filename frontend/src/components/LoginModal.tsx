@@ -2,24 +2,28 @@ import { useState } from 'react'
 import { useAuthStore } from '../store/auth'
 import Modal from './Modal'
 import { login } from '../api/auth'
+import { useToast } from '../hooks/useToast'
+
+interface LoginModalProps {
+	open: boolean
+	onClose: () => void
+	openSignup: () => void
+}
 
 export default function LoginModal({
 	open,
 	onClose,
 	openSignup,
-}: {
-	open: boolean
-	onClose: () => void
-	openSignup: () => void
-}) {
+}: LoginModalProps) {
 	const [email, setEmail] = useState('')
 	const [password, setPassword] = useState('')
 	const [loading, setLoading] = useState(false)
 	const setTokens = useAuthStore(s => s.setTokens)
+	const { addToast } = useToast()
 
 	const submit = async () => {
 		if (!email || !password) {
-			alert('Please fill in all fields')
+			addToast('Please fill in all fields', 'error')
 			return
 		}
 
@@ -27,6 +31,10 @@ export default function LoginModal({
 		try {
 			const data = await login({ email, password })
 			setTokens(data.access_token, data.refresh_token)
+
+			// Сохраняем email пользователя
+			localStorage.setItem('userEmail', email)
+
 			onClose()
 			setEmail('')
 			setPassword('')
@@ -39,7 +47,7 @@ export default function LoginModal({
 				errorMessage = axiosError.response?.data?.error || errorMessage
 			}
 
-			alert(errorMessage)
+			addToast(errorMessage, 'error')
 		} finally {
 			setLoading(false)
 		}
@@ -81,7 +89,10 @@ export default function LoginModal({
 						{loading ? 'Logging in...' : 'Login'}
 					</button>
 					<button
-						onClick={openSignup}
+						onClick={() => {
+							onClose()
+							openSignup()
+						}}
 						disabled={loading}
 						className='px-4 py-3 rounded-xl border border-gray-200 bg-white/70 hover:bg-white/90 transition-all duration-200 disabled:opacity-50'
 					>

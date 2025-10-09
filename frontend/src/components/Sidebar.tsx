@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '../store/auth'
 import { getBoards } from '../api/board'
 import type { Board } from '../types/board'
+import { useModal } from '../hooks/useModal'
 
 interface SidebarProps {
 	isOpen: boolean
@@ -13,8 +14,19 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 	const navigate = useNavigate()
 	const location = useLocation()
 	const token = useAuthStore(s => s.accessToken)
+	const clearTokens = useAuthStore(s => s.clear)
+	const { openLogin, openSignup } = useModal()
 	const [boards, setBoards] = useState<Board[]>([])
 	const [loading, setLoading] = useState(false)
+
+	// Получаем email пользователя из localStorage или используем заглушку
+	const getUserEmail = () => {
+		if (!token) return ''
+		// В будущем можно получать из decoded JWT токена
+		return localStorage.getItem('userEmail') || 'user@example.com'
+	}
+
+	const userEmail = getUserEmail()
 
 	useEffect(() => {
 		if (token && isOpen) {
@@ -32,6 +44,23 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 		} finally {
 			setLoading(false)
 		}
+	}
+
+	const handleLogin = () => {
+		openLogin()
+		onClose()
+	}
+
+	const handleSignup = () => {
+		openSignup()
+		onClose()
+	}
+
+	const handleLogout = () => {
+		clearTokens()
+		localStorage.removeItem('userEmail')
+		navigate('/dashboard')
+		onClose()
 	}
 
 	const isActive = (path: string) => {
@@ -67,12 +96,18 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 			>
 				{/* Header */}
 				<div className='p-6 border-b border-gray-200/50'>
-					<div className='flex items-center gap-3'>
+					<div
+						className='flex items-center gap-3 cursor-pointer group'
+						onClick={() => {
+							navigate('/dashboard')
+							onClose()
+						}}
+					>
 						<div className='w-10 h-10 rounded-full bg-gradient-to-br from-sky-400 to-indigo-500 flex items-center justify-center text-white font-bold'>
 							TT
 						</div>
 						<div>
-							<h1 className='text-lg font-semibold text-gray-900'>
+							<h1 className='text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors duration-200'>
 								TaskTracker
 							</h1>
 							<p className='text-sm text-gray-600'>Project Management</p>
@@ -106,7 +141,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 				</nav>
 
 				{/* Boards Section */}
-				<div className='p-4 border-t border-gray-200/50'>
+				<div className='flex-1 p-4 border-t border-gray-200/50 overflow-hidden'>
 					<div className='flex items-center justify-between mb-4'>
 						<h3 className='font-semibold text-gray-900'>My Boards</h3>
 						<button
@@ -153,7 +188,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 								>
 									<div className='flex items-center gap-2'>
 										<div className='w-2 h-2 rounded-full bg-blue-500'></div>
-										<span className='truncate'>{board.name}</span>
+										<span className='truncate flex-1'>{board.name}</span>
 									</div>
 									<div className='text-xs text-gray-500 mt-1'>
 										Created {new Date(board.created_at).toLocaleDateString()}
@@ -165,21 +200,42 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 				</div>
 
 				{/* User Profile */}
-				{token && (
-					<div className='p-4 border-t border-gray-200/50'>
-						<div className='flex items-center gap-3 p-2'>
-							<div className='w-8 h-8 rounded-full bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center text-white text-sm font-bold'>
-								U
+				<div className='p-4 border-t border-gray-200/50'>
+					{!token ? (
+						<div className='space-y-2'>
+							<button
+								onClick={handleLogin}
+								className='w-full p-3 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 text-white font-semibold hover:shadow-lg transition-all duration-200'
+							>
+								Login
+							</button>
+							<button
+								onClick={handleSignup}
+								className='w-full p-3 rounded-xl border border-gray-200 bg-white/70 hover:bg-white/90 transition-all duration-200'
+							>
+								Sign Up
+							</button>
+						</div>
+					) : (
+						<div className='flex items-center gap-3 p-3 rounded-xl bg-gray-50/50'>
+							<div className='w-10 h-10 rounded-full bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center text-white font-bold'>
+								{userEmail.charAt(0).toUpperCase()}
 							</div>
 							<div className='flex-1 min-w-0'>
 								<p className='text-sm font-medium text-gray-900 truncate'>
-									user@example.com
+									{userEmail}
 								</p>
-								<p className='text-xs text-gray-600'>Free Plan</p>
 							</div>
+							<button
+								onClick={handleLogout}
+								className='p-2 rounded-lg hover:bg-white transition-colors duration-200 text-gray-600'
+								title='Logout'
+							>
+								🚪
+							</button>
 						</div>
-					</div>
-				)}
+					)}
+				</div>
 			</div>
 		</>
 	)

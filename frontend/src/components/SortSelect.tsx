@@ -1,5 +1,3 @@
-import React from 'react'
-
 export type SortOption = 'newest' | 'oldest' | 'deadline_asc' | 'deadline_desc'
 
 interface SortSelectProps {

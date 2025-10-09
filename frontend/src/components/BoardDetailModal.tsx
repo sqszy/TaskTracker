@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import Modal from './Modal'
 import { getTasks, deleteTask } from '../api/tasks'
 import type { Task } from '../types/board'
 import { useAuthStore } from '../store/auth'
 import TaskModal from './TaskModal'
 import TaskCard from './TaskCard'
+import { useToast } from '../hooks/useToast'
 
 export default function BoardDetailModal({
 	open,
@@ -24,13 +25,9 @@ export default function BoardDetailModal({
 	const [taskModalOpen, setTaskModalOpen] = useState(false)
 	const [selectedTask, setSelectedTask] = useState<Task | null>(null)
 	const token = useAuthStore(s => s.accessToken)
+	const { addToast } = useToast()
 
-	useEffect(() => {
-		if (!open || !boardID) return
-		loadTasks()
-	}, [open, boardID])
-
-	const loadTasks = async () => {
+	const loadTasks = useCallback(async () => {
 		if (!boardID) return
 		setLoading(true)
 		try {
@@ -38,10 +35,16 @@ export default function BoardDetailModal({
 			setTasks(data)
 		} catch (e) {
 			console.error(e)
+			addToast('Failed to load tasks', 'error')
 		} finally {
 			setLoading(false)
 		}
-	}
+	}, [boardID, addToast])
+
+	useEffect(() => {
+		if (!open || !boardID) return
+		loadTasks()
+	}, [open, boardID, loadTasks])
 
 	const handleDeleteTask = async (taskId: number) => {
 		if (!boardID) return
@@ -51,9 +54,10 @@ export default function BoardDetailModal({
 			await deleteTask(boardID, taskId)
 			setTasks(prev => prev.filter(task => task.id !== taskId))
 			onTaskUpdate?.()
+			addToast('Task deleted successfully', 'success')
 		} catch (e) {
 			console.error(e)
-			alert('Cannot delete task')
+			addToast('Cannot delete task', 'error')
 		}
 	}
 
@@ -64,7 +68,7 @@ export default function BoardDetailModal({
 
 	const openTaskModal = (task?: Task) => {
 		if (!token) {
-			alert('Please login to manage tasks')
+			addToast('Please login to manage tasks', 'error')
 			return
 		}
 		setSelectedTask(task || null)

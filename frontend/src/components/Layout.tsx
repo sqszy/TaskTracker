@@ -10,9 +10,10 @@ export default function Layout() {
 		<div className='min-h-screen bg-gradient-to-br from-gray-50 to-blue-50/30'>
 			<Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-			<div className='lg:ml-80'>
+			{/* Основной контент - убираем лишние отступы */}
+			<div className='lg:ml-80 min-h-screen flex flex-col'>
 				<Navbar onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
-				<main className='p-6'>
+				<main className='flex-1 p-4'>
 					<Outlet />
 				</main>
 			</div>

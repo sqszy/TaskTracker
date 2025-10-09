@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 
 interface Filters {
 	status: string
@@ -39,13 +39,13 @@ export default function FilterDropdown({
 
 			{isOpen && (
 				<>
-					{/* Backdrop */}
+					{/* Backdrop with higher z-index */}
 					<div
 						className='fixed inset-0 z-40'
 						onClick={() => setIsOpen(false)}
 					/>
-					{/* Dropdown */}
-					<div className='absolute top-full right-0 mt-2 w-64 p-4 rounded-2xl bg-white/90 backdrop-blur-md shadow-xl border border-gray-200 z-50'>
+					{/* Dropdown with higher z-index */}
+					<div className='absolute top-full right-0 mt-2 w-64 p-4 rounded-2xl bg-white/90 backdrop-blur-md shadow-xl border border-gray-200/50 z-50'>
 						<div className='space-y-4'>
 							{/* Status Filter */}
 							<div>

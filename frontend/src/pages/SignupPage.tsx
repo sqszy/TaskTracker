@@ -1,19 +1,21 @@
 import { useState } from 'react'
 import api from '../api/axios'
 import { useNavigate } from 'react-router-dom'
+import { useToast } from '../hooks/useToast'
 
 export default function SignupPage() {
 	const [email, setEmail] = useState('')
 	const [password, setPassword] = useState('')
 	const navigate = useNavigate()
+	const { addToast } = useToast()
 
 	const handleSignup = async () => {
 		try {
 			await api.post('/signup', { email, password })
-			alert('Account created, please login')
+			addToast('Account created, please login', 'error')
 			navigate('/login')
 		} catch {
-			alert('Signup failed')
+			addToast('Signup failed', 'error')
 		}
 	}
 
