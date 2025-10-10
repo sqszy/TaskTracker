@@ -9,6 +9,7 @@ interface TaskModalProps {
 	onClose: () => void
 	boardID: number
 	task?: Task | null
+	initialStatus?: TaskStatus
 	mode: 'create' | 'edit'
 	onTaskUpdate: () => void
 	onDelete?: (taskId: number) => void
@@ -19,6 +20,7 @@ export default function TaskModal({
 	onClose,
 	boardID,
 	task,
+	initialStatus = 'todo',
 	mode,
 	onTaskUpdate,
 	onDelete,
@@ -48,12 +50,12 @@ export default function TaskModal({
 			setFormData({
 				title: '',
 				description: '',
-				status: 'todo',
+				status: initialStatus,
 				priority: 'medium',
 				deadline: '',
 			})
 		}
-	}, [task, mode, open])
+	}, [task, mode, open, initialStatus])
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault()
@@ -125,10 +127,10 @@ export default function TaskModal({
 		)
 
 		if (diffDays < 0)
-			return 'border-red-500 bg-red-200 text-red-900 font-semibold shadow-sm'
+			return 'border-red-500 bg-red-200 text-red-900 font-semibold shadow-sm animate-pulse'
 		if (diffDays <= 3)
 			return 'border-yellow-500 bg-yellow-200 text-yellow-900 font-semibold shadow-sm animate-pulse'
-		return 'border-green-500 bg-green-200 text-green-900 font-semibold'
+		return 'border-green-500 bg-green-200 text-green-900 font-semibold shadow-sm animate-pulse'
 	}
 
 	return (

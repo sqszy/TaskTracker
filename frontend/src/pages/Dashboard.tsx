@@ -1,7 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import BoardCard from '../components/BoardCard'
-import BoardDetailModal from '../components/BoardDetailModal'
 import { getBoards, createBoard, deleteBoard } from '../api/board'
 import type { Board } from '../types/board'
 import SearchBar from '../components/SearchBar'
@@ -15,11 +14,6 @@ export default function Dashboard() {
 	const [filteredBoards, setFilteredBoards] = useState<Board[]>([])
 	const [search, setSearch] = useState('')
 	const [boardModalOpen, setBoardModalOpen] = useState(false)
-	const [detailModalOpen, setDetailModalOpen] = useState(false)
-	const [selectedBoard, setSelectedBoard] = useState<{
-		id?: number
-		name?: string
-	}>({})
 	const [newBoardName, setNewBoardName] = useState('')
 	const [loading, setLoading] = useState(true)
 	const [creating, setCreating] = useState(false)
@@ -82,10 +76,6 @@ export default function Dashboard() {
 			setNewBoardName('')
 			setBoardModalOpen(false)
 			addToast('Board created successfully', 'success')
-
-			setTimeout(() => {
-				loadBoards()
-			}, 500)
 		} catch (err) {
 			console.error('Failed to create board:', err)
 			addToast('Cannot create board', 'error')
@@ -106,51 +96,31 @@ export default function Dashboard() {
 			await deleteBoard(boardId)
 			setBoards(prev => prev.filter(board => board.id !== boardId))
 			addToast('Board deleted successfully', 'success')
-
-			setTimeout(() => {
-				loadBoards()
-			}, 300)
 		} catch (err) {
 			console.error('Failed to delete board:', err)
 			addToast('Cannot delete board', 'error')
 		}
 	}
 
-	const openBoardDetail = (id: number, name: string) => {
-		if (!token) {
-			addToast('Please login to view board details', 'info')
-			openLogin()
-			return
-		}
-		setSelectedBoard({ id, name })
-		setDetailModalOpen(true)
-	}
-
-	const openFullBoard = (id: number) => {
-		if (!token) {
-			addToast('Please login to view boards', 'info')
-			openLogin()
-			return
-		}
-		navigate(`/boards/${id}`)
-	}
-
 	if (loading) {
 		return (
-			<div className='flex items-center justify-center min-h-[200px]'>
-				<div className='text-lg text-gray-600'>Loading boards...</div>
+			<div className='flex items-center justify-center min-h-[400px]'>
+				<div className='text-center'>
+					<div className='w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4'></div>
+					<div className='text-gray-600'>Loading boards...</div>
+				</div>
 			</div>
 		)
 	}
 
 	return (
-		<div className='max-w-6xl mx-auto'>
-			{/* Компактный заголовок */}
-			<div className='mb-6'>
-				<div className='flex justify-between items-center mb-4'>
+		<div className='max-w-7xl mx-auto'>
+			{/* Header with actions on the right */}
+			<div className='mb-8'>
+				<div className='flex justify-between items-start mb-6'>
 					<div>
 						<h1 className='text-2xl font-bold text-gray-900'>My Boards</h1>
-						<p className='text-gray-600 mt-1 text-sm'>
+						<p className='text-gray-600 mt-1'>
 							{boards.length === 0
 								? 'Create your first board to get started'
 								: `${boards.length} board${
@@ -158,18 +128,49 @@ export default function Dashboard() {
 								  } available`}
 						</p>
 					</div>
-					<div className='flex gap-2'>
+					<div className='flex gap-3'>
 						<button
 							onClick={loadBoards}
-							className='px-3 py-2 rounded-xl border border-gray-200 bg-white/70 hover:bg-white/90 transition-all duration-200 text-sm'
+							className='flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-300 bg-white hover:bg-gray-50 transition-all duration-200'
+							disabled={loading}
 						>
-							🔄 Refresh
+							{loading ? (
+								<div className='w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin'></div>
+							) : (
+								<svg
+									className='w-4 h-4 hover:rotate-180 transition-transform duration-300'
+									fill='none'
+									stroke='currentColor'
+									viewBox='0 0 24 24'
+								>
+									<path
+										strokeLinecap='round'
+										strokeLinejoin='round'
+										strokeWidth={2}
+										d='M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15'
+									/>
+								</svg>
+							)}
+							<span className='hidden sm:block'>Refresh</span>
 						</button>
 						<button
 							onClick={handleCreateBoardClick}
-							className='px-4 py-2 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 text-white font-semibold hover:shadow-lg transition-all duration-200 text-sm'
+							className='flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 text-white font-semibold hover:shadow-lg transition-all duration-200'
 						>
-							+ New Board
+							<svg
+								className='w-4 h-4'
+								fill='none'
+								stroke='currentColor'
+								viewBox='0 0 24 24'
+							>
+								<path
+									strokeLinecap='round'
+									strokeLinejoin='round'
+									strokeWidth={2}
+									d='M12 4v16m8-8H4'
+								/>
+							</svg>
+							<span>New Board</span>
 						</button>
 					</div>
 				</div>
@@ -186,67 +187,104 @@ export default function Dashboard() {
 
 			{/* Boards Grid */}
 			{!token ? (
-				<div className='text-center py-12'>
-					<div className='text-4xl mb-3'>👋</div>
-					<h2 className='text-xl font-bold text-gray-900 mb-3'>
+				<div className='text-center py-16'>
+					<div className='w-24 h-24 mx-auto mb-6 rounded-full bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center'>
+						<svg
+							className='w-12 h-12 text-blue-500'
+							fill='none'
+							stroke='currentColor'
+							viewBox='0 0 24 24'
+						>
+							<path
+								strokeLinecap='round'
+								strokeLinejoin='round'
+								strokeWidth={2}
+								d='M12 6v6m0 0v6m0-6h6m-6 0H6'
+							/>
+						</svg>
+					</div>
+					<h2 className='text-2xl font-bold text-gray-900 mb-3'>
 						Welcome to TaskTracker
 					</h2>
-					<p className='text-gray-600 mb-6 max-w-md mx-auto text-sm'>
+					<p className='text-gray-600 mb-8 max-w-md mx-auto'>
 						Please login or sign up to create and manage your boards and tasks.
 					</p>
 					<button
 						onClick={openLogin}
-						className='px-6 py-3 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 text-white font-semibold hover:shadow-lg transition-all duration-200'
+						className='px-8 py-3 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 text-white font-semibold hover:shadow-lg transition-all duration-200'
 					>
 						Get Started
 					</button>
 				</div>
 			) : (
-				<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4'>
+				<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
+					{/* Existing boards */}
 					{filteredBoards.map(board => (
-						<div key={board.id} className='relative group'>
-							<BoardCard
-								board={board}
-								onOpen={openBoardDetail}
-								onOpenFull={openFullBoard}
-							/>
-							<button
-								onClick={() => handleDeleteBoard(board.id)}
-								className='absolute -top-2 -right-2 w-5 h-5 rounded-full bg-red-500 text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:scale-110 flex items-center justify-center'
-								title='Delete board'
-							>
-								×
-							</button>
-						</div>
+						<BoardCard
+							key={board.id}
+							board={board}
+							onDelete={handleDeleteBoard}
+							onOpen={() => navigate(`/boards/${board.id}`)}
+						/>
 					))}
 
-					{/* Empty states */}
+					{/* Add New Board Card */}
+					<div
+						className='border-2 border-dashed border-gray-300 rounded-2xl p-8 flex flex-col items-center justify-center cursor-pointer hover:border-blue-400 transition-all duration-300 group min-h-[300px]'
+						onClick={handleCreateBoardClick}
+					>
+						<div className='w-16 h-16 rounded-full bg-gradient-to-br from-blue-100 to-purple-100 group-hover:from-blue-200 group-hover:to-purple-200 transition-all duration-300 flex items-center justify-center mb-4'>
+							<svg
+								className='w-8 h-8 text-blue-500 group-hover:text-blue-600 transition-colors duration-300'
+								fill='none'
+								stroke='currentColor'
+								viewBox='0 0 24 24'
+							>
+								<path
+									strokeLinecap='round'
+									strokeLinejoin='round'
+									strokeWidth={2}
+									d='M12 4v16m8-8H4'
+								/>
+							</svg>
+						</div>
+						<h3 className='text-lg font-semibold text-gray-700 mb-2'>
+							Add New Board
+						</h3>
+						<p className='text-gray-500 text-sm text-center'>
+							Create a new board to organize your tasks and projects
+						</p>
+					</div>
+
+					{/* Empty search state */}
 					{filteredBoards.length === 0 && boards.length > 0 && (
-						<div className='col-span-full text-center py-8'>
-							<div className='text-3xl mb-3'>🔍</div>
-							<div className='text-gray-400 text-sm mb-3'>
-								No boards found matching "{search}"
+						<div className='col-span-full text-center py-12'>
+							<div className='w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 flex items-center justify-center'>
+								<svg
+									className='w-8 h-8 text-gray-400'
+									fill='none'
+									stroke='currentColor'
+									viewBox='0 0 24 24'
+								>
+									<path
+										strokeLinecap='round'
+										strokeLinejoin='round'
+										strokeWidth={2}
+										d='M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z'
+									/>
+								</svg>
 							</div>
+							<h3 className='text-lg font-semibold text-gray-900 mb-2'>
+								No boards found
+							</h3>
+							<p className='text-gray-600 mb-4'>
+								No boards matching "{search}" were found
+							</p>
 							<button
 								onClick={() => setSearch('')}
-								className='px-3 py-2 rounded-xl border border-gray-200 bg-white/70 hover:bg-white/90 transition-all duration-200 text-sm'
+								className='px-4 py-2 rounded-xl border border-gray-300 bg-white hover:bg-gray-50 transition-all duration-200'
 							>
 								Clear Search
-							</button>
-						</div>
-					)}
-
-					{boards.length === 0 && (
-						<div className='col-span-full text-center py-8'>
-							<div className='text-3xl mb-3'>📋</div>
-							<div className='text-gray-400 text-sm mb-3'>
-								You don't have any boards yet
-							</div>
-							<button
-								onClick={handleCreateBoardClick}
-								className='px-4 py-2 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 text-white font-semibold hover:shadow-lg transition-all duration-200 text-sm'
-							>
-								Create Your First Board
 							</button>
 						</div>
 					)}
@@ -257,7 +295,7 @@ export default function Dashboard() {
 			{boardModalOpen && (
 				<div className='fixed inset-0 z-50 flex items-center justify-center'>
 					<div
-						className='absolute inset-0 bg-black/40'
+						className='absolute inset-0 bg-black/40 backdrop-blur-sm'
 						onClick={() => setBoardModalOpen(false)}
 					/>
 					<div className='relative w-full max-w-md p-6 rounded-2xl bg-white/90 backdrop-blur-md shadow-2xl z-10'>
@@ -267,7 +305,7 @@ export default function Dashboard() {
 								value={newBoardName}
 								onChange={e => setNewBoardName(e.target.value)}
 								placeholder='Enter board name...'
-								className='w-full p-3 rounded-xl border border-gray-200 bg-white/70 backdrop-blur-md focus:ring-2 focus:ring-blue-500 focus:border-transparent'
+								className='w-full p-3 rounded-xl border border-gray-200 bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent'
 								onKeyPress={e => e.key === 'Enter' && handleCreateBoard()}
 								autoFocus
 							/>
@@ -281,7 +319,7 @@ export default function Dashboard() {
 								</button>
 								<button
 									onClick={() => setBoardModalOpen(false)}
-									className='px-4 py-3 rounded-xl border border-gray-200 bg-white/70 hover:bg-white/90 transition-all duration-200'
+									className='px-4 py-3 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 transition-all duration-200'
 								>
 									Cancel
 								</button>
@@ -290,15 +328,6 @@ export default function Dashboard() {
 					</div>
 				</div>
 			)}
-
-			{/* Board Detail Modal */}
-			<BoardDetailModal
-				open={detailModalOpen}
-				onClose={() => setDetailModalOpen(false)}
-				boardID={selectedBoard.id}
-				boardName={selectedBoard.name}
-				onTaskUpdate={loadBoards}
-			/>
 		</div>
 	)
 }

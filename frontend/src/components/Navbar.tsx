@@ -50,13 +50,13 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
 
 	return (
 		<>
-			{/* Navbar */}
-			<header className='flex items-center justify-between p-4 bg-white/80 backdrop-blur-md border-b border-gray-200/50 sticky top-0 z-30'>
+			{/* Navbar with Liquid Glass */}
+			<header className='flex items-center justify-between p-4 navbar-glass sticky top-0 z-30'>
 				{/* Left section: menu and logo */}
 				<div className='flex items-center gap-3'>
 					<button
 						onClick={onMenuClick}
-						className='p-2 rounded-xl hover:bg-gray-100 transition-all duration-200 lg:hidden z-10'
+						className='p-2 rounded-xl hover:bg-white/20 transition-all duration-300 lg:hidden z-10 clickable'
 					>
 						<span className='text-xl'>☰</span>
 					</button>
@@ -64,13 +64,13 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
 					{/* Logo and Dashboard */}
 					<div className='flex items-center gap-3'>
 						<div
-							className='w-10 h-10 rounded-full bg-gradient-to-br from-sky-400 to-indigo-500 flex items-center justify-center text-white font-bold cursor-pointer hover:scale-105 transition-transform duration-200'
+							className='w-10 h-10 rounded-full bg-gradient-to-br from-sky-400 to-indigo-500 flex items-center justify-center text-white font-bold cursor-pointer hover:scale-105 transition-transform duration-300 shadow-lg clickable'
 							onClick={() => navigate('/dashboard')}
 						>
 							TT
 						</div>
 						<span
-							className='text-lg font-semibold text-gray-900 cursor-pointer hover:text-blue-600 transition-colors duration-200 hidden sm:block'
+							className='text-lg font-semibold text-gray-900 cursor-pointer hover:text-blue-600 transition-colors duration-300 hidden sm:block clickable'
 							onClick={() => navigate('/dashboard')}
 						>
 							Dashboard
@@ -84,13 +84,13 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
 						<div className='flex items-center gap-2'>
 							<button
 								onClick={handleLoginClick}
-								className='px-4 py-2 rounded-xl border border-gray-300 bg-white hover:bg-gray-50 transition-all duration-200 text-sm font-medium z-10'
+								className='px-4 py-2 rounded-xl border border-white/30 bg-white/10 hover:bg-white/20 transition-all duration-300 text-sm font-medium z-10 clickable liquid-glass-light'
 							>
 								Login
 							</button>
 							<button
 								onClick={handleSignupClick}
-								className='px-4 py-2 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 text-white hover:shadow-lg transition-all duration-200 text-sm font-medium z-10'
+								className='px-4 py-2 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 text-white hover:shadow-lg transition-all duration-300 text-sm font-medium z-10 clickable hover-lift'
 							>
 								Sign Up
 							</button>
@@ -99,9 +99,9 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
 						<div className='relative z-20'>
 							<button
 								onClick={() => setProfileOpen(!profileOpen)}
-								className='flex items-center gap-2 p-2 rounded-xl bg-gray-100 hover:bg-gray-200 transition-all duration-200 z-10'
+								className='flex items-center gap-2 p-2 rounded-xl bg-white/10 hover:bg-white/20 transition-all duration-300 border border-white/30 clickable liquid-glass-light'
 							>
-								<div className='w-8 h-8 rounded-full bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center text-white text-sm font-bold'>
+								<div className='w-8 h-8 rounded-full bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center text-white text-sm font-bold shadow-lg'>
 									{userEmail.charAt(0).toUpperCase()}
 								</div>
 								<span className='text-sm font-medium text-gray-700 hidden md:block'>
@@ -109,18 +109,20 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
 								</span>
 							</button>
 
-							{/* Profile dropdown */}
+							{/* Profile dropdown with Liquid Glass */}
 							{profileOpen && (
 								<>
 									{/* Backdrop */}
 									<div
-										className='fixed inset-0 z-40'
+										className='fixed inset-0 z-40 backdrop-glass'
 										onClick={() => setProfileOpen(false)}
 									/>
 									{/* Dropdown menu */}
-									<div className='absolute top-full right-0 mt-2 w-48 py-2 rounded-xl bg-white border border-gray-200 shadow-lg z-50'>
-										<div className='px-4 py-2 border-b border-gray-200'>
-											<p className='text-sm font-medium'>Signed in as</p>
+									<div className='absolute top-full right-0 mt-2 w-48 py-2 rounded-xl liquid-glass border border-white/30 shadow-xl z-50'>
+										<div className='px-4 py-2 border-b border-white/20'>
+											<p className='text-sm font-medium text-gray-800'>
+												Signed in as
+											</p>
 											<p className='text-sm text-gray-600 truncate'>
 												{userEmail}
 											</p>
@@ -131,14 +133,14 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
 												navigate('/settings')
 												setProfileOpen(false)
 											}}
-											className='w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-200 flex items-center gap-2'
+											className='w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-white/20 transition-colors duration-300 flex items-center gap-2'
 										>
 											<span>⚙️</span>
 											<span>Settings</span>
 										</button>
 										<button
 											onClick={handleLogout}
-											className='w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 transition-colors duration-200 flex items-center gap-2'
+											className='w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-500/20 transition-colors duration-300 flex items-center gap-2'
 										>
 											<span>🚪</span>
 											<span>Logout</span>

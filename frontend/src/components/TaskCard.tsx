@@ -4,14 +4,12 @@ import type { Task, TaskStatus, TaskPriority } from '../types/board'
 interface TaskCardProps {
 	task: Task
 	onUpdate?: (taskId: number, updates: Partial<Task>) => void
-	onDelete?: (taskId: number) => void
 	onClick?: (task: Task) => void
 	compact?: boolean
 }
 
 export default function TaskCard({
 	task,
-	onDelete,
 	onClick,
 	compact = false,
 }: TaskCardProps) {
@@ -65,11 +63,6 @@ export default function TaskCard({
 	const handleClick = (e: React.MouseEvent) => {
 		e.stopPropagation()
 		onClick?.(task)
-	}
-
-	const handleDelete = (e: React.MouseEvent) => {
-		e.stopPropagation()
-		onDelete?.(task.id)
 	}
 
 	if (compact) {
@@ -146,19 +139,6 @@ export default function TaskCard({
 						{formatDate(task.deadline)}
 					</span>
 				</div>
-
-				{/* Actions - Only show if onDelete is provided */}
-				{onDelete && (
-					<div className='opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex gap-1'>
-						<button
-							onClick={handleDelete}
-							className='p-1 hover:bg-gray-100 rounded-lg transition-colors text-red-500'
-							title='Delete task'
-						>
-							🗑️
-						</button>
-					</div>
-				)}
 			</div>
 		</div>
 	)

@@ -35,7 +35,7 @@ export default function KanbanColumn({
 
 	return (
 		<div
-			className='flex-1 min-w-80 bg-gray-50/50 rounded-2xl p-4 backdrop-blur-md border border-gray-200/50 relative z-10'
+			className='flex-1 min-w-80 bg-gray-50/80 rounded-2xl p-4 backdrop-blur-md border border-gray-200'
 			onDragOver={handleDragOver}
 			onDrop={handleDrop}
 		>
@@ -50,10 +50,22 @@ export default function KanbanColumn({
 				</div>
 				<button
 					onClick={onAddTask}
-					className='w-8 h-8 rounded-full bg-white/70 backdrop-blur-md border border-gray-200 flex items-center justify-center text-gray-600 hover:text-gray-900 hover:shadow-sm transition-all duration-200'
+					className='w-8 h-8 rounded-full bg-white border border-gray-300 flex items-center justify-center text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-all duration-200 clickable'
 					title={`Add task to ${title}`}
 				>
-					+
+					<svg
+						className='w-4 h-4'
+						fill='none'
+						stroke='currentColor'
+						viewBox='0 0 24 24'
+					>
+						<path
+							strokeLinecap='round'
+							strokeLinejoin='round'
+							strokeWidth={2}
+							d='M12 4v16m8-8H4'
+						/>
+					</svg>
 				</button>
 			</div>
 
@@ -65,12 +77,13 @@ export default function KanbanColumn({
 						draggable
 						onDragStart={e => {
 							e.dataTransfer.setData('taskId', task.id.toString())
+							e.dataTransfer.effectAllowed = 'move'
 						}}
+						className='cursor-grab active:cursor-grabbing'
 					>
 						<TaskCard
 							task={task}
 							onUpdate={onTaskUpdate}
-							onDelete={() => {}} // Empty function for now since we handle delete in modal
 							onClick={onTaskClick}
 						/>
 					</div>

@@ -55,8 +55,8 @@ export default function BoardDetail() {
 	const [loading, setLoading] = useState(false)
 	const [taskModalOpen, setTaskModalOpen] = useState(false)
 	const [selectedTask, setSelectedTask] = useState<Task | null>(null)
+	const [selectedStatus, setSelectedStatus] = useState<TaskStatus>('todo') // Новое состояние для статуса
 	const [error, setError] = useState<string | null>(null)
-	const [searchError, setSearchError] = useState<string | null>(null) // Отдельная ошибка для поиска
 
 	// Load tasks with filters
 	const loadTasks = useCallback(async () => {
@@ -64,8 +64,6 @@ export default function BoardDetail() {
 
 		setLoading(true)
 		setError(null)
-		setSearchError(null)
-
 		const params: GetTasksParams = {
 			search: search || undefined,
 			status: filters.status || undefined,
@@ -81,22 +79,11 @@ export default function BoardDetail() {
 		try {
 			const data = await getTasks(boardID, params)
 			setTasks(data || [])
-
-			// Если поиск не дал результатов
-			if (search && data && data.length === 0) {
-				setSearchError('No tasks found matching your search')
-			}
 		} catch (err) {
 			console.error('Failed to load tasks:', err)
 			const errorMessage =
 				err instanceof Error ? err.message : 'Failed to load tasks'
-
-			if (search) {
-				setSearchError(`Search failed: ${errorMessage}`)
-			} else {
-				setError(errorMessage)
-			}
-
+			setError(errorMessage)
 			addToast('Failed to load tasks', 'error')
 			setTasks([])
 		} finally {
@@ -105,24 +92,13 @@ export default function BoardDetail() {
 	}, [boardID, search, filters, sort, addToast])
 
 	useEffect(() => {
-		const timer = setTimeout(() => {
-			loadTasks()
-		}, 300) // Задержка 300ms
-
-		return () => clearTimeout(timer)
-	}, [search, loadTasks])
-
-	useEffect(() => {
 		loadTasks()
-	}, [filters, sort, viewMode, loadTasks])
-
-	const handleSearchError = (error: string) => {
-		setSearchError(error)
-	}
+	}, [loadTasks])
 
 	const handleUpdateTask = async (taskId: number, updates: Partial<Task>) => {
 		try {
 			await updateTask(boardID, taskId, updates)
+			addToast('Task updated successfully', 'success')
 			loadTasks()
 		} catch (err) {
 			console.error('Failed to update task:', err)
@@ -135,6 +111,7 @@ export default function BoardDetail() {
 
 		try {
 			await deleteTask(boardID, taskId)
+			addToast('Task deleted successfully', 'success')
 			loadTasks()
 		} catch (err) {
 			console.error('Failed to delete task:', err)
@@ -142,8 +119,16 @@ export default function BoardDetail() {
 		}
 	}
 
-	const openTaskModal = (task?: Task) => {
+	// Обновленная функция открытия модалки с автоматическим статусом
+	const openTaskModal = (task?: Task, status?: TaskStatus) => {
 		setSelectedTask(task || null)
+		if (status) {
+			setSelectedStatus(status) // Устанавливаем статус если передан
+		} else if (task) {
+			setSelectedStatus(task.status) // Или используем статус задачи
+		} else {
+			setSelectedStatus('todo') // Или дефолтный
+		}
 		setTaskModalOpen(true)
 	}
 
@@ -178,7 +163,6 @@ export default function BoardDetail() {
 						</h1>
 						<p className='text-gray-600'>
 							{tasks.length} task{tasks.length !== 1 ? 's' : ''} total
-							{search && ` • Searching for "${search}"`}
 						</p>
 					</div>
 
@@ -186,18 +170,29 @@ export default function BoardDetail() {
 						onClick={() => openTaskModal()}
 						className='px-6 py-3 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 text-white font-semibold hover:shadow-lg transition-all duration-200 flex items-center gap-2'
 					>
-						<span>+</span>
+						<svg
+							className='w-5 h-5'
+							fill='none'
+							stroke='currentColor'
+							viewBox='0 0 24 24'
+						>
+							<path
+								strokeLinecap='round'
+								strokeLinejoin='round'
+								strokeWidth={2}
+								d='M12 4v16m8-8H4'
+							/>
+						</svg>
 						<span>Add Task</span>
 					</button>
 				</div>
 
 				{/* Controls Bar */}
-				<div className='flex flex-wrap gap-4 items-center justify-between p-4 rounded-2xl bg-white/50 backdrop-blur-md border border-gray-200/50'>
+				<div className='flex flex-wrap gap-4 items-center justify-between p-4 rounded-xl bg-white/80 backdrop-blur-md border border-gray-200'>
 					<SearchBar
 						value={search}
 						onChange={setSearch}
 						placeholder='Search tasks...'
-						onSearchError={handleSearchError}
 					/>
 
 					<div className='flex items-center gap-3'>
@@ -207,43 +202,34 @@ export default function BoardDetail() {
 
 						<button
 							onClick={loadTasks}
-							className='p-2 rounded-xl border border-gray-200 bg-white/70 hover:bg-white/90 transition-all duration-200'
+							className='p-2 rounded-xl border border-gray-300 bg-white hover:bg-gray-50 transition-all duration-200 clickable'
 							title='Refresh tasks'
 							disabled={loading}
 						>
-							{loading ? '⏳' : '🔄'}
+							{loading ? (
+								<div className='w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin'></div>
+							) : (
+								<svg
+									className='w-5 h-5 hover:rotate-180 transition-transform duration-300'
+									fill='none'
+									stroke='currentColor'
+									viewBox='0 0 24 24'
+								>
+									<path
+										strokeLinecap='round'
+										strokeLinejoin='round'
+										strokeWidth={2}
+										d='M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15'
+									/>
+								</svg>
+							)}
 						</button>
 					</div>
 				</div>
 			</div>
 
-			{/* Search Error State */}
-			{searchError && (
-				<div className='mb-6 p-4 rounded-2xl bg-yellow-50 border border-yellow-200'>
-					<div className='flex items-center justify-between'>
-						<div>
-							<p className='text-yellow-800 font-medium'>{searchError}</p>
-							{search && (
-								<button
-									onClick={() => setSearch('')}
-									className='mt-2 text-yellow-700 hover:text-yellow-900 text-sm'
-								>
-									Clear search
-								</button>
-							)}
-						</div>
-						<button
-							onClick={() => setSearchError(null)}
-							className='text-yellow-600 hover:text-yellow-800'
-						>
-							✕
-						</button>
-					</div>
-				</div>
-			)}
-
-			{/* General Error State */}
-			{error && !searchError && (
+			{/* Error State */}
+			{error && (
 				<div className='text-center py-8'>
 					<div className='text-red-600 bg-red-50 p-4 rounded-xl border border-red-200'>
 						<p className='font-semibold'>Error loading tasks</p>
@@ -259,11 +245,9 @@ export default function BoardDetail() {
 			)}
 
 			{/* Loading State */}
-			{loading && (
+			{loading && !error && (
 				<div className='text-center py-8'>
-					<div className='text-gray-600'>
-						{search ? 'Searching tasks...' : 'Loading tasks...'}
-					</div>
+					<div className='text-gray-600'>Loading tasks...</div>
 				</div>
 			)}
 
@@ -281,7 +265,7 @@ export default function BoardDetail() {
 									tasks={tasksByStatus[status.value] || []}
 									onTaskUpdate={handleUpdateTask}
 									onTaskClick={openTaskModal}
-									onAddTask={() => openTaskModal()}
+									onAddTask={() => openTaskModal(undefined, status.value)} // Передаем статус при создании
 									color={status.color}
 								/>
 							))}
@@ -293,14 +277,10 @@ export default function BoardDetail() {
 								<div className='col-span-full text-center py-12'>
 									<div className='text-4xl mb-4'>📝</div>
 									<h3 className='text-lg font-semibold text-gray-900 mb-2'>
-										{searchError ? 'No tasks found' : 'No tasks yet'}
+										No tasks yet
 									</h3>
 									<p className='text-gray-600 mb-6'>
-										{search
-											? 'Try adjusting your search query'
-											: filters.status || filters.priority || filters.deadline
-											? 'Try adjusting your filters'
-											: 'Create your first task to get started'}
+										Create your first task to get started
 									</p>
 									<button
 										onClick={() => openTaskModal()}
@@ -315,7 +295,6 @@ export default function BoardDetail() {
 										key={task.id}
 										task={task}
 										onUpdate={handleUpdateTask}
-										onDelete={handleDeleteTask}
 										onClick={openTaskModal}
 									/>
 								))
@@ -325,15 +304,17 @@ export default function BoardDetail() {
 				</>
 			)}
 
-			{/* Task Modal */}
+			{/* Task Modal с переданным статусом */}
 			<TaskModal
 				open={taskModalOpen}
 				onClose={() => {
 					setTaskModalOpen(false)
 					setSelectedTask(null)
+					setSelectedStatus('todo')
 				}}
 				boardID={boardID}
 				task={selectedTask}
+				initialStatus={selectedStatus}
 				mode={selectedTask ? 'edit' : 'create'}
 				onTaskUpdate={loadTasks}
 				onDelete={handleDeleteTask}

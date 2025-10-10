@@ -22,30 +22,54 @@ export default function FilterDropdown({
 	}
 
 	return (
-		<div className='relative z-50'>
+		<div className='relative z-[100]'>
+			{' '}
+			{/* Увеличиваем z-index */}
 			<button
 				onClick={() => setIsOpen(!isOpen)}
-				className='px-4 py-2 rounded-2xl border border-gray-200 bg-white/70 backdrop-blur-md hover:bg-white/90 transition-all duration-200 flex items-center gap-2 relative z-50'
+				className='px-4 py-2 rounded-xl border border-gray-300 bg-white/80 hover:bg-white transition-all duration-200 flex items-center gap-2 clickable'
 			>
+				<svg
+					className='w-4 h-4'
+					fill='none'
+					stroke='currentColor'
+					viewBox='0 0 24 24'
+				>
+					<path
+						strokeLinecap='round'
+						strokeLinejoin='round'
+						strokeWidth={2}
+						d='M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z'
+					/>
+				</svg>
 				<span>Filter</span>
-				<span
-					className={`transform transition-transform ${
+				<svg
+					className={`w-4 h-4 transform transition-transform duration-200 ${
 						isOpen ? 'rotate-180' : ''
 					}`}
+					fill='none'
+					stroke='currentColor'
+					viewBox='0 0 24 24'
 				>
-					▼
-				</span>
+					<path
+						strokeLinecap='round'
+						strokeLinejoin='round'
+						strokeWidth={2}
+						d='M19 9l-7 7-7-7'
+					/>
+				</svg>
 			</button>
-
 			{isOpen && (
 				<>
-					{/* Backdrop with higher z-index */}
+					{/* Backdrop */}
 					<div
 						className='fixed inset-0 z-40'
 						onClick={() => setIsOpen(false)}
 					/>
-					{/* Dropdown with higher z-index */}
-					<div className='absolute top-full right-0 mt-2 w-64 p-4 rounded-2xl bg-white/90 backdrop-blur-md shadow-xl border border-gray-200/50 z-50'>
+					{/* Dropdown */}
+					<div className='absolute top-full right-0 mt-2 w-64 p-4 rounded-xl bg-white/95 backdrop-blur-md border border-gray-200 shadow-xl z-[1000]'>
+						{' '}
+						{/* Увеличиваем z-index */}
 						<div className='space-y-4'>
 							{/* Status Filter */}
 							<div>
@@ -55,7 +79,7 @@ export default function FilterDropdown({
 								<select
 									value={filters.status}
 									onChange={e => updateFilter('status', e.target.value)}
-									className='w-full p-2 rounded-xl border border-gray-200 bg-white/70 backdrop-blur-md focus:ring-2 focus:ring-blue-500 focus:border-transparent'
+									className='w-full p-2 rounded-lg border border-gray-300 bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent'
 								>
 									<option value=''>All Statuses</option>
 									<option value='todo'>To Do</option>
@@ -73,7 +97,7 @@ export default function FilterDropdown({
 								<select
 									value={filters.priority}
 									onChange={e => updateFilter('priority', e.target.value)}
-									className='w-full p-2 rounded-xl border border-gray-200 bg-white/70 backdrop-blur-md focus:ring-2 focus:ring-blue-500 focus:border-transparent'
+									className='w-full p-2 rounded-lg border border-gray-300 bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent'
 								>
 									<option value=''>All Priorities</option>
 									<option value='low'>Low</option>
@@ -90,7 +114,7 @@ export default function FilterDropdown({
 								<select
 									value={filters.deadline}
 									onChange={e => updateFilter('deadline', e.target.value)}
-									className='w-full p-2 rounded-xl border border-gray-200 bg-white/70 backdrop-blur-md focus:ring-2 focus:ring-blue-500 focus:border-transparent'
+									className='w-full p-2 rounded-lg border border-gray-300 bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent'
 								>
 									<option value=''>All Tasks</option>
 									<option value='with'>With Deadline</option>
