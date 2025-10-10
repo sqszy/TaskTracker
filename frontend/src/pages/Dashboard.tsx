@@ -115,7 +115,7 @@ export default function Dashboard() {
 
 	return (
 		<div className='max-w-7xl mx-auto'>
-			{/* Header with actions on the right */}
+			{/* Header */}
 			<div className='mb-8'>
 				<div className='flex justify-between items-start mb-6'>
 					<div>
@@ -175,7 +175,7 @@ export default function Dashboard() {
 					</div>
 				</div>
 
-				{/* Search Bar */}
+				{/* Search */}
 				<div className='max-w-md'>
 					<SearchBar
 						value={search}
@@ -185,7 +185,7 @@ export default function Dashboard() {
 				</div>
 			</div>
 
-			{/* Boards Grid */}
+			{/* Content */}
 			{!token ? (
 				<div className='text-center py-16'>
 					<div className='w-24 h-24 mx-auto mb-6 rounded-full bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center'>
@@ -218,50 +218,11 @@ export default function Dashboard() {
 				</div>
 			) : (
 				<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
-					{/* Existing boards */}
-					{filteredBoards.map(board => (
-						<BoardCard
-							key={board.id}
-							board={board}
-							onDelete={handleDeleteBoard}
-							onOpen={() => navigate(`/boards/${board.id}`)}
-						/>
-					))}
-
-					{/* Add New Board Card */}
-					<div
-						className='border-2 border-dashed border-gray-300 rounded-2xl p-8 flex flex-col items-center justify-center cursor-pointer hover:border-blue-400 transition-all duration-300 group min-h-[300px]'
-						onClick={handleCreateBoardClick}
-					>
-						<div className='w-16 h-16 rounded-full bg-gradient-to-br from-blue-100 to-purple-100 group-hover:from-blue-200 group-hover:to-purple-200 transition-all duration-300 flex items-center justify-center mb-4'>
-							<svg
-								className='w-8 h-8 text-blue-500 group-hover:text-blue-600 transition-colors duration-300'
-								fill='none'
-								stroke='currentColor'
-								viewBox='0 0 24 24'
-							>
-								<path
-									strokeLinecap='round'
-									strokeLinejoin='round'
-									strokeWidth={2}
-									d='M12 4v16m8-8H4'
-								/>
-							</svg>
-						</div>
-						<h3 className='text-lg font-semibold text-gray-700 mb-2'>
-							Add New Board
-						</h3>
-						<p className='text-gray-500 text-sm text-center'>
-							Create a new board to organize your tasks and projects
-						</p>
-					</div>
-
-					{/* Empty search state */}
-					{filteredBoards.length === 0 && boards.length > 0 && (
-						<div className='col-span-full text-center py-12'>
-							<div className='w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 flex items-center justify-center'>
+					{filteredBoards.length === 0 && boards.length === 0 ? (
+						<div className='col-span-full text-center py-16'>
+							<div className='w-24 h-24 mx-auto mb-6 rounded-full bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center'>
 								<svg
-									className='w-8 h-8 text-gray-400'
+									className='w-12 h-12 text-blue-500'
 									fill='none'
 									stroke='currentColor'
 									viewBox='0 0 24 24'
@@ -270,23 +231,61 @@ export default function Dashboard() {
 										strokeLinecap='round'
 										strokeLinejoin='round'
 										strokeWidth={2}
-										d='M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z'
+										d='M12 6v6m0 0v6m0-6h6m-6 0H6'
 									/>
 								</svg>
 							</div>
-							<h3 className='text-lg font-semibold text-gray-900 mb-2'>
-								No boards found
+							<h3 className='text-2xl font-bold text-gray-900 mb-3'>
+								No boards yet
 							</h3>
-							<p className='text-gray-600 mb-4'>
-								No boards matching "{search}" were found
+							<p className='text-gray-600 mb-6 text-lg'>
+								Create your first board to get started
 							</p>
 							<button
-								onClick={() => setSearch('')}
-								className='px-4 py-2 rounded-xl border border-gray-300 bg-white hover:bg-gray-50 transition-all duration-200'
+								onClick={handleCreateBoardClick}
+								className='px-8 py-4 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 text-white font-semibold hover:shadow-lg transition-all duration-200 text-lg'
 							>
-								Clear Search
+								Create Your First Board
 							</button>
 						</div>
+					) : (
+						<>
+							{filteredBoards.map(board => (
+								<BoardCard
+									key={board.id}
+									board={board}
+									onDelete={handleDeleteBoard}
+									onOpen={() => navigate(`/boards/${board.id}`)}
+								/>
+							))}
+
+							<div
+								className='border-2 border-dashed border-gray-300 rounded-2xl p-8 flex flex-col items-center justify-center cursor-pointer hover:border-blue-400 transition-all duration-300 group min-h-[300px]'
+								onClick={handleCreateBoardClick}
+							>
+								<div className='w-16 h-16 rounded-full bg-gradient-to-br from-blue-100 to-purple-100 group-hover:from-blue-200 group-hover:to-purple-200 transition-all duration-300 flex items-center justify-center mb-4'>
+									<svg
+										className='w-8 h-8 text-blue-500 group-hover:text-blue-600 transition-colors duration-300'
+										fill='none'
+										stroke='currentColor'
+										viewBox='0 0 24 24'
+									>
+										<path
+											strokeLinecap='round'
+											strokeLinejoin='round'
+											strokeWidth={2}
+											d='M12 4v16m8-8H4'
+										/>
+									</svg>
+								</div>
+								<h3 className='text-lg font-semibold text-gray-700 mb-2'>
+									Add New Board
+								</h3>
+								<p className='text-gray-500 text-sm text-center'>
+									Create a new board to organize your tasks and projects
+								</p>
+							</div>
+						</>
 					)}
 				</div>
 			)}

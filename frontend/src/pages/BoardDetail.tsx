@@ -115,7 +115,6 @@ export default function BoardDetail() {
 			loadTasks()
 		} catch (err) {
 			console.error('Failed to delete task:', err)
-			addToast('Failed to delete task', 'error')
 		}
 	}
 

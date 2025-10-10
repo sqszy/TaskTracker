@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import Modal from './Modal'
-import { getTasks, deleteTask } from '../api/tasks'
+import { getTasks } from '../api/tasks'
 import type { Task } from '../types/board'
 import { useAuthStore } from '../store/auth'
 import TaskModal from './TaskModal'
@@ -45,21 +45,6 @@ export default function BoardDetailModal({
 		if (!open || !boardID) return
 		loadTasks()
 	}, [open, boardID, loadTasks])
-
-	const handleDeleteTask = async (taskId: number) => {
-		if (!boardID) return
-		if (!confirm('Are you sure you want to delete this task?')) return
-
-		try {
-			await deleteTask(boardID, taskId)
-			setTasks(prev => prev.filter(task => task.id !== taskId))
-			onTaskUpdate?.()
-			addToast('Task deleted successfully', 'success')
-		} catch (e) {
-			console.error(e)
-			addToast('Cannot delete task', 'error')
-		}
-	}
 
 	const handleTaskUpdate = () => {
 		loadTasks()
@@ -136,11 +121,7 @@ export default function BoardDetailModal({
 												className='cursor-pointer transform hover:scale-[1.02] transition-transform duration-200'
 												onClick={() => openTaskModal(task)}
 											>
-												<TaskCard
-													task={task}
-													onUpdate={handleTaskUpdate}
-													onDelete={handleDeleteTask}
-												/>
+												<TaskCard task={task} onUpdate={handleTaskUpdate} />
 											</div>
 										))}
 

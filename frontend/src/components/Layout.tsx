@@ -8,14 +8,14 @@ export default function Layout() {
 
 	const getPageTitle = () => {
 		const path = location.pathname
-		if (path === '/dashboard') return 'Dashboard'
+		if (path === '/dashboard') return 'Task Tracker/Dashboard'
 		if (path.startsWith('/boards/')) {
 			const boardId = path.split('/')[2]
 			return `Board ${boardId}`
 		}
-		if (path === '/calendar') return 'Calendar'
-		if (path === '/notifications') return 'Notifications'
-		if (path === '/settings') return 'Settings'
+		if (path === '/calendar') return 'Task Tracker/Calendar'
+		if (path === '/notifications') return 'Task Tracker/Notifications'
+		if (path === '/settings') return 'Task Tracker/Settings'
 		return 'TaskTracker'
 	}
 
