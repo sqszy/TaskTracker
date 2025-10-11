@@ -270,7 +270,6 @@ html {
 		transform: rotate(360deg);
 	}
 }
-
 .animate-spin-slow {
 	animation: spin-slow 2s linear infinite;
 }
@@ -358,11 +357,6 @@ button,
 	z-index: 40;
 }
 
-/* Анимация вращения */
-.animate-spin-slow {
-	animation: spin-slow 3s linear infinite;
-}
-
 /* Анимация пульсации */
 @keyframes gentle-pulse {
 	0%,
@@ -411,11 +405,10 @@ button,
 	animation: shake 0.3s ease-in-out;
 }
 
-/* Critical fix for clickability */
 .force-clickable {
 	pointer-events: auto !important;
 	position: relative;
-	z-index: 9999;
+	z-index: 60;
 }
 
 /* Ensure modal triggers work */

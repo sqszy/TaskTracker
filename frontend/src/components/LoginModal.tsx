@@ -53,10 +53,8 @@ export default function LoginModal({
 		}
 	}
 
-	const handleKeyPress = (e: React.KeyboardEvent) => {
-		if (e.key === 'Enter') {
-			submit()
-		}
+	const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+		if (e.key === 'Enter') submit()
 	}
 
 	return (
@@ -68,7 +66,7 @@ export default function LoginModal({
 					placeholder='Email'
 					value={email}
 					onChange={e => setEmail(e.target.value)}
-					onKeyPress={handleKeyPress}
+					onKeyDown={handleKeyDown}
 					disabled={loading}
 				/>
 				<input
@@ -77,7 +75,7 @@ export default function LoginModal({
 					placeholder='Password'
 					value={password}
 					onChange={e => setPassword(e.target.value)}
-					onKeyPress={handleKeyPress}
+					onKeyDown={handleKeyDown}
 					disabled={loading}
 				/>
 				<div className='flex gap-2'>

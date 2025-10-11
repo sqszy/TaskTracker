@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useRef } from 'react'
 
 interface ModalProps {
 	open: boolean
@@ -15,16 +15,41 @@ export default function Modal({
 	title,
 	width = 'w-full max-w-lg',
 }: ModalProps) {
+	const dialogRef = useRef<HTMLDivElement | null>(null)
+
+	useEffect(() => {
+		if (!open) return
+
+		const onKey = (e: KeyboardEvent) => {
+			if (e.key === 'Escape') {
+				onClose()
+			}
+		}
+
+		document.addEventListener('keydown', onKey)
+		dialogRef.current?.focus()
+
+		return () => {
+			document.removeEventListener('keydown', onKey)
+		}
+	}, [open, onClose])
+
 	if (!open) return null
 
 	return (
-		<div className='fixed inset-0 z-50 flex items-center justify-center p-4'>
+		<div
+			className='fixed inset-0 z-[9999] flex items-center justify-center p-4'
+			role='dialog'
+			aria-modal='true'
+		>
 			<div
 				className='absolute inset-0 bg-black/40 backdrop-blur-sm'
 				onClick={onClose}
 			/>
 			<div
-				className={`relative ${width} p-6 rounded-3xl bg-white/20 backdrop-blur-xl border border-white/30 shadow-2xl z-10 liquid-glass`}
+				ref={dialogRef}
+				tabIndex={-1}
+				className={`relative ${width} p-6 rounded-3xl bg-white/20 backdrop-blur-xl border border-white/30 shadow-2xl z-70 liquid-glass`}
 			>
 				{title && (
 					<div className='flex items-center justify-between mb-4 pb-4 border-b border-white/20'>
@@ -32,6 +57,7 @@ export default function Modal({
 						<button
 							onClick={onClose}
 							className='p-1 rounded-lg hover:bg-white/20 transition-colors duration-200'
+							aria-label='Close'
 						>
 							×
 						</button>
