@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import BoardCard from '../components/BoardCard'
-import { getBoards, createBoard, deleteBoard } from '../api/board'
+import { getBoards, createBoard, updateBoard, deleteBoard } from '../api/board'
 import type { Board } from '../types/board'
 import SearchBar from '../components/SearchBar'
 import { useAuthStore } from '../store/auth'
@@ -17,6 +17,8 @@ export default function Dashboard() {
 	const [newBoardName, setNewBoardName] = useState('')
 	const [loading, setLoading] = useState(true)
 	const [creating, setCreating] = useState(false)
+	const [editingBoard, setEditingBoard] = useState<Board | null>(null)
+	const [editedName, setEditedName] = useState('')
 	const token = useAuthStore(s => s.accessToken)
 	const { addToast } = useToast()
 	const { openLogin } = useModal()
@@ -30,7 +32,8 @@ export default function Dashboard() {
 		setLoading(true)
 		try {
 			const data = await getBoards()
-			setBoards(data)
+			setBoards(Array.isArray(data) ? data : [])
+			window.dispatchEvent(new CustomEvent('boards:loaded', { detail: data }))
 		} catch (err) {
 			console.error('Failed to load boards:', err)
 			addToast('Failed to load boards', 'error')
@@ -42,6 +45,12 @@ export default function Dashboard() {
 	useEffect(() => {
 		loadBoards()
 	}, [loadBoards])
+
+	useEffect(() => {
+		const handler = () => setBoardModalOpen(true)
+		window.addEventListener('open:createBoard', handler)
+		return () => window.removeEventListener('open:createBoard', handler)
+	}, [])
 
 	useEffect(() => {
 		if (search.trim()) {
@@ -73,6 +82,7 @@ export default function Dashboard() {
 		try {
 			const board = await createBoard(newBoardName.trim())
 			setBoards(prev => [board, ...prev])
+			window.dispatchEvent(new CustomEvent('board:created', { detail: board }))
 			setNewBoardName('')
 			setBoardModalOpen(false)
 			addToast('Board created successfully', 'success')
@@ -81,6 +91,29 @@ export default function Dashboard() {
 			addToast('Cannot create board', 'error')
 		} finally {
 			setCreating(false)
+		}
+	}
+
+	const handleEditBoard = async () => {
+		if (!editingBoard || !editedName.trim()) return
+		try {
+			const updated = await updateBoard(editingBoard.id, {
+				name: editedName.trim(),
+			})
+			setBoards(prev =>
+				prev.map(b =>
+					b.id === editingBoard.id ? { ...b, name: updated.name } : b
+				)
+			)
+			window.dispatchEvent(
+				new CustomEvent('board:updated', { detail: updated })
+			)
+			addToast('Board renamed successfully', 'success')
+			setEditingBoard(null)
+			setEditedName('')
+		} catch (err) {
+			console.error('Failed to update board:', err)
+			addToast('Cannot rename board', 'error')
 		}
 	}
 
@@ -96,6 +129,9 @@ export default function Dashboard() {
 			await deleteBoard(boardId)
 			setBoards(prev => prev.filter(board => board.id !== boardId))
 			addToast('Board deleted successfully', 'success')
+			window.dispatchEvent(
+				new CustomEvent('board:deleted', { detail: boardId })
+			)
 		} catch (err) {
 			console.error('Failed to delete board:', err)
 			addToast('Cannot delete board', 'error')
@@ -121,11 +157,11 @@ export default function Dashboard() {
 					<div>
 						<h1 className='text-2xl font-bold text-gray-900'>My Boards</h1>
 						<p className='text-gray-600 mt-1'>
-							{boards.length === 0
-								? 'Create your first board to get started'
-								: `${boards.length} board${
+							{boards && boards.length > 0
+								? `${boards.length} board${
 										boards.length !== 1 ? 's' : ''
-								  } available`}
+								  } available`
+								: 'Create your first board to get started'}
 						</p>
 					</div>
 					<div className='flex gap-3'>
@@ -218,7 +254,7 @@ export default function Dashboard() {
 				</div>
 			) : (
 				<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
-					{filteredBoards.length === 0 && boards.length === 0 ? (
+					{filteredBoards.length === 0 ? (
 						<div className='col-span-full text-center py-16'>
 							<div className='w-24 h-24 mx-auto mb-6 rounded-full bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center'>
 								<svg
@@ -255,10 +291,15 @@ export default function Dashboard() {
 									key={board.id}
 									board={board}
 									onDelete={handleDeleteBoard}
+									onEdit={() => {
+										setEditingBoard(board)
+										setEditedName(board.name)
+									}}
 									onOpen={() => navigate(`/boards/${board.id}`)}
 								/>
 							))}
 
+							{/* Card for NewBoard */}
 							<div
 								className='border-2 border-dashed border-gray-300 rounded-2xl p-8 flex flex-col items-center justify-center cursor-pointer hover:border-blue-400 transition-all duration-300 group min-h-[300px]'
 								onClick={handleCreateBoardClick}
@@ -290,6 +331,43 @@ export default function Dashboard() {
 				</div>
 			)}
 
+			{/* Rename board modal */}
+			{editingBoard && (
+				<div className='fixed inset-0 z-50 flex items-center justify-center'>
+					<div
+						className='absolute inset-0 bg-black/40 backdrop-blur-sm'
+						onClick={() => setEditingBoard(null)}
+					/>
+					<div className='relative w-full max-w-md p-6 rounded-2xl bg-white/90 backdrop-blur-md shadow-2xl z-10'>
+						<h3 className='text-lg font-semibold mb-4'>Rename Board</h3>
+						<div className='space-y-4'>
+							<input
+								value={editedName}
+								onChange={e => setEditedName(e.target.value)}
+								placeholder='Enter new name...'
+								className='w-full p-3 rounded-xl border border-gray-200 bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent'
+								onKeyDown={e => e.key === 'Enter' && handleEditBoard()}
+								autoFocus
+							/>
+							<div className='flex gap-2'>
+								<button
+									onClick={handleEditBoard}
+									className='flex-1 py-3 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 text-white font-semibold hover:shadow-lg transition-all duration-200'
+								>
+									Save
+								</button>
+								<button
+									onClick={() => setEditingBoard(null)}
+									className='px-4 py-3 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 transition-all duration-200'
+								>
+									Cancel
+								</button>
+							</div>
+						</div>
+					</div>
+				</div>
+			)}
+
 			{/* Create Board Modal */}
 			{boardModalOpen && (
 				<div className='fixed inset-0 z-50 flex items-center justify-center'>
@@ -305,7 +383,7 @@ export default function Dashboard() {
 								onChange={e => setNewBoardName(e.target.value)}
 								placeholder='Enter board name...'
 								className='w-full p-3 rounded-xl border border-gray-200 bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent'
-								onKeyPress={e => e.key === 'Enter' && handleCreateBoard()}
+								onKeyDown={e => e.key === 'Enter' && handleCreateBoard()}
 								autoFocus
 							/>
 							<div className='flex gap-2'>

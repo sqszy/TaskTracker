@@ -7,9 +7,8 @@ export function UserProvider({ children }: { children: ReactNode }) {
 	const [userEmail, setUserEmail] = useState('')
 	const [avatarUrl, setAvatarUrl] = useState('')
 
-	// Генерируем случайную аватарку
 	const generateAvatar = (seed: string) => {
-		return `https://api.dicebear.com/7.x/avatars/svg?seed=${seed}&backgroundColor=65c9ff,b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf&radius=50`
+		return `https://api.multiavatar.com/${encodeURIComponent(seed)}.svg`
 	}
 
 	useEffect(() => {

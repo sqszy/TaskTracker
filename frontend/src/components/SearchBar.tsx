@@ -21,7 +21,6 @@ export default function SearchBar({
 		const newValue = e.target.value
 		onChange(newValue)
 
-		// Можно добавить дебаунс здесь если нужно
 		if (newValue.length > 50) {
 			const errorMsg = 'Search query too long'
 			addToast(errorMsg, 'info')
@@ -40,7 +39,7 @@ export default function SearchBar({
 				onChange={handleChange}
 				className='w-full pl-10 pr-4 py-2 rounded-2xl border border-gray-200 bg-white/70 backdrop-blur-md focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200'
 				placeholder={placeholder}
-				maxLength={100} // Ограничение длины для предотвращения ошибок
+				maxLength={100}
 			/>
 			{/* Индикатор очистки */}
 			{value && (

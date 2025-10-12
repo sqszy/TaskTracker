@@ -36,11 +36,9 @@ export default function SignupModal({
 		try {
 			await signup({ email, password })
 
-			// После регистрации автоматически логинимся
 			const loginData = await login({ email, password })
 			setTokens(loginData.access_token, loginData.refresh_token)
 
-			// Сохраняем email пользователя
 			localStorage.setItem('userEmail', email)
 
 			onClose()

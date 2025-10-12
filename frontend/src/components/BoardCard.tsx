@@ -1,19 +1,26 @@
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import type { Board, Task } from '../types/board'
 import { getTasks } from '../api/tasks'
 
 interface BoardCardProps {
 	board: Board
 	onDelete: (boardId: number) => void
+	onEdit?: () => void
 	onOpen: (boardId: number) => void
 }
 
-export default function BoardCard({ board, onDelete, onOpen }: BoardCardProps) {
+export default function BoardCard({
+	board,
+	onDelete,
+	onOpen,
+	onEdit,
+}: BoardCardProps) {
 	const [tasks, setTasks] = useState<Task[]>([])
 	const [loading, setLoading] = useState(true)
 
 	useEffect(() => {
 		loadTasks()
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [board.id])
 
 	const loadTasks = async () => {
@@ -64,28 +71,57 @@ export default function BoardCard({ board, onDelete, onOpen }: BoardCardProps) {
 					<h3 className='text-lg font-semibold text-gray-900 truncate flex-1 pr-2'>
 						{board.name}
 					</h3>
-					<button
-						onClick={e => {
-							e.stopPropagation()
-							onDelete(board.id)
-						}}
-						className='opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-1 hover:bg-red-100 rounded-lg text-red-500'
-						title='Delete board'
-					>
-						<svg
-							className='w-4 h-4'
-							fill='none'
-							stroke='currentColor'
-							viewBox='0 0 24 24'
+
+					{/* action buttons - edit + delete */}
+					<div className='flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200'>
+						{onEdit && (
+							<button
+								onClick={e => {
+									e.stopPropagation()
+									onEdit()
+								}}
+								className='p-1 hover:bg-gray-100 rounded-lg text-gray-600'
+								title='Rename board'
+							>
+								<svg
+									className='w-4 h-4'
+									fill='none'
+									stroke='currentColor'
+									viewBox='0 0 24 24'
+								>
+									<path
+										strokeLinecap='round'
+										strokeLinejoin='round'
+										strokeWidth={2}
+										d='M15.232 5.232l3.536 3.536M9 11l6-6 3 3-6 6H9v-3z'
+									/>
+								</svg>
+							</button>
+						)}
+
+						<button
+							onClick={e => {
+								e.stopPropagation()
+								onDelete(board.id)
+							}}
+							className='p-1 hover:bg-red-100 rounded-lg text-red-500'
+							title='Delete board'
 						>
-							<path
-								strokeLinecap='round'
-								strokeLinejoin='round'
-								strokeWidth={2}
-								d='M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16'
-							/>
-						</svg>
-					</button>
+							<svg
+								className='w-4 h-4'
+								fill='none'
+								stroke='currentColor'
+								viewBox='0 0 24 24'
+							>
+								<path
+									strokeLinecap='round'
+									strokeLinejoin='round'
+									strokeWidth={2}
+									d='M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16'
+								/>
+							</svg>
+						</button>
+					</div>
 				</div>
 
 				{/* Nearest Deadline */}

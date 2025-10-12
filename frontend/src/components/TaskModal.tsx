@@ -100,10 +100,6 @@ export default function TaskModal({
 	const handleDelete = async () => {
 		if (!task || !onDelete) return
 
-		if (!window.confirm('Are you sure you want to delete this task?')) {
-			return
-		}
-
 		setLoading(true)
 		try {
 			await deleteTask(boardID, task.id)

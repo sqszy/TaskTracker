@@ -32,7 +32,6 @@ export default function LoginModal({
 			const data = await login({ email, password })
 			setTokens(data.access_token, data.refresh_token)
 
-			// Сохраняем email пользователя
 			localStorage.setItem('userEmail', email)
 
 			onClose()

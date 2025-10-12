@@ -55,7 +55,7 @@ export default function BoardDetail() {
 	const [loading, setLoading] = useState(false)
 	const [taskModalOpen, setTaskModalOpen] = useState(false)
 	const [selectedTask, setSelectedTask] = useState<Task | null>(null)
-	const [selectedStatus, setSelectedStatus] = useState<TaskStatus>('todo') // Новое состояние для статуса
+	const [selectedStatus, setSelectedStatus] = useState<TaskStatus>('todo')
 	const [error, setError] = useState<string | null>(null)
 
 	// Load tasks with filters
@@ -118,15 +118,14 @@ export default function BoardDetail() {
 		}
 	}
 
-	// Обновленная функция открытия модалки с автоматическим статусом
 	const openTaskModal = (task?: Task, status?: TaskStatus) => {
 		setSelectedTask(task || null)
 		if (status) {
-			setSelectedStatus(status) // Устанавливаем статус если передан
+			setSelectedStatus(status)
 		} else if (task) {
-			setSelectedStatus(task.status) // Или используем статус задачи
+			setSelectedStatus(task.status)
 		} else {
-			setSelectedStatus('todo') // Или дефолтный
+			setSelectedStatus('todo')
 		}
 		setTaskModalOpen(true)
 	}
@@ -264,7 +263,7 @@ export default function BoardDetail() {
 									tasks={tasksByStatus[status.value] || []}
 									onTaskUpdate={handleUpdateTask}
 									onTaskClick={openTaskModal}
-									onAddTask={() => openTaskModal(undefined, status.value)} // Передаем статус при создании
+									onAddTask={() => openTaskModal(undefined, status.value)}
 									color={status.color}
 								/>
 							))}

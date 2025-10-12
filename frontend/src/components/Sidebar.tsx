@@ -5,13 +5,14 @@ import { getBoards } from '../api/board'
 import type { Board } from '../types/board'
 import { useModal } from '../hooks/useModal'
 import { useUser } from '../hooks/useUser'
+import { useToast } from '../hooks/useToast'
 
 interface SidebarProps {
 	isOpen: boolean
 	onClose: () => void
 }
 
-// SVG иконки
+// SVG icons
 const DashboardIcon = () => (
 	<svg
 		className='w-5 h-5'
@@ -79,6 +80,19 @@ const RefreshIcon = ({ loading = false }: { loading?: boolean }) =>
 		</svg>
 	)
 
+const BOARD_COLORS = [
+	'bg-blue-500',
+	'bg-green-500',
+	'bg-rose-500',
+	'bg-yellow-500',
+	'bg-indigo-500',
+	'bg-teal-500',
+	'bg-purple-500',
+	'bg-pink-500',
+	'bg-orange-500',
+	'bg-lime-500',
+]
+
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 	const navigate = useNavigate()
 	const location = useLocation()
@@ -86,9 +100,24 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 	const clearTokens = useAuthStore(s => s.clear)
 	const { openLogin, openSignup } = useModal()
 	const { userEmail } = useUser()
+	const { addToast } = useToast()
 	const [boards, setBoards] = useState<Board[]>([])
 	const [loading, setLoading] = useState(false)
 	const [profileOpen, setProfileOpen] = useState(false)
+	const [showAllBoards, setShowAllBoards] = useState(false)
+
+	const MAX_BOARDS_DISPLAY = 10
+	const displayedBoards = showAllBoards
+		? boards
+		: boards.slice(0, MAX_BOARDS_DISPLAY)
+	const hasMoreBoards = boards.length > MAX_BOARDS_DISPLAY
+
+	const getUserAvatarUrl = () => {
+		const seed = userEmail || Math.random().toString(36).slice(2, 9)
+		return `https://api.dicebear.com/9.x/personas/svg?seed=${encodeURIComponent(
+			seed
+		)}&backgroundColor=65c9ff,b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf`
+	}
 
 	useEffect(() => {
 		if (token && isOpen) {
@@ -96,11 +125,37 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 		}
 	}, [token, isOpen])
 
+	useEffect(() => {
+		const onBoardsLoaded = (e: Event) => {
+			const detail = (e as CustomEvent).detail as Board[]
+			if (Array.isArray(detail)) setBoards(detail)
+		}
+		const onBoardCreated = (e: Event) => {
+			const newBoard = (e as CustomEvent).detail as Board
+			if (!newBoard) return
+			setBoards(prev => [newBoard, ...prev])
+		}
+		const onBoardDeleted = (e: Event) => {
+			const id = (e as CustomEvent).detail as number
+			setBoards(prev => prev.filter(b => b.id !== id))
+		}
+
+		window.addEventListener('boards:loaded', onBoardsLoaded)
+		window.addEventListener('board:created', onBoardCreated)
+		window.addEventListener('board:deleted', onBoardDeleted)
+
+		return () => {
+			window.removeEventListener('boards:loaded', onBoardsLoaded)
+			window.removeEventListener('board:created', onBoardCreated)
+			window.removeEventListener('board:deleted', onBoardDeleted)
+		}
+	}, [])
+
 	const loadBoards = async () => {
 		setLoading(true)
 		try {
 			const data = await getBoards()
-			setBoards(data)
+			setBoards(Array.isArray(data) ? data : [])
 		} catch (err) {
 			console.error('Failed to load boards:', err)
 		} finally {
@@ -109,13 +164,11 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 	}
 
 	const handleLogin = () => {
-		console.log('Login button clicked')
 		openLogin()
 		onClose()
 	}
 
 	const handleSignup = () => {
-		console.log('Signup button clicked')
 		openSignup()
 		onClose()
 	}
@@ -132,15 +185,16 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 		return location.pathname === path
 	}
 
-	const menuItems = [
-		{ path: '/dashboard', icon: <DashboardIcon />, label: 'Dashboard' },
-		{ path: '/calendar', icon: <CalendarIcon />, label: 'Calendar' },
-		{
-			path: '/notifications',
-			icon: <NotificationsIcon />,
-			label: 'Notifications',
-		},
-	]
+	const handleCreateOne = () => {
+		if (!token) {
+			addToast('Please login to create a board', 'info')
+			openLogin()
+			return
+		}
+		console.log('Dispatching open:createBoard event')
+		window.dispatchEvent(new CustomEvent('open:createBoard'))
+		onClose()
+	}
 
 	return (
 		<>
@@ -155,16 +209,15 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 			{/* Sidebar */}
 			<div
 				className={`
-          fixed lg:static inset-y-0 left-0 z-40
-          w-64 bg-white/80 backdrop-blur-lg border-r border-gray-200/50
-          transform transition-transform duration-300 ease-in-out
-          flex flex-col
-          ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-          lg:min-h-screen
-        `}
+				fixed lg:fixed inset-y-0 left-0 z-40
+				w-64 bg-white/80 backdrop-blur-lg border-r border-gray-200/50
+				transform transition-transform duration-300 ease-in-out
+				flex flex-col h-screen
+				${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+			`}
 			>
 				{/* Header */}
-				<div className='p-6 border-b border-gray-200/50'>
+				<div className='p-6 border-b border-gray-200/50 flex-shrink-0'>
 					<div
 						className='flex items-center gap-3 cursor-pointer group clickable force-clickable'
 						onClick={() => {
@@ -178,7 +231,6 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 								height='24'
 								viewBox='0 0 24 24'
 								fill='none'
-								xmlns='http://www.w3.org/2000/svg'
 								className='text-white'
 							>
 								<path
@@ -195,13 +247,29 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 				</div>
 
 				{/* Main Navigation */}
-				<nav className='flex-1 p-4'>
+				<nav className='flex-1 overflow-y-auto p-4'>
 					<div className='mb-6'>
 						<h3 className='text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3'>
 							Navigation
 						</h3>
 						<div className='space-y-1'>
-							{menuItems.map(item => (
+							{[
+								{
+									path: '/dashboard',
+									icon: <DashboardIcon />,
+									label: 'Dashboard',
+								},
+								{
+									path: '/calendar',
+									icon: <CalendarIcon />,
+									label: 'Calendar',
+								},
+								{
+									path: '/notifications',
+									icon: <NotificationsIcon />,
+									label: 'Notifications',
+								},
+							].map(item => (
 								<button
 									key={item.path}
 									onClick={() => {
@@ -231,65 +299,84 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 					<div className='mb-6'>
 						<div className='flex items-center justify-between mb-3'>
 							<h3 className='text-xs font-semibold text-gray-500 uppercase tracking-wider'>
-								My Boards
+								My Boards ({boards.length})
 							</h3>
 							<button
 								onClick={loadBoards}
+								disabled={loading}
 								className='p-1 rounded-lg hover:bg-gray-200/50 transition-colors duration-200 clickable force-clickable'
 								title='Refresh boards'
-								disabled={loading}
 							>
 								<RefreshIcon loading={loading} />
 							</button>
 						</div>
 
-						<div className='space-y-1 max-h-64 overflow-y-auto'>
+						<div className='space-y-1'>
 							{loading ? (
 								<div className='text-center py-2'>
 									<div className='text-gray-500 text-sm'>Loading boards...</div>
 								</div>
-							) : boards.length === 0 ? (
+							) : displayedBoards.length === 0 ? (
 								<div className='text-center py-2'>
 									<div className='text-gray-500 text-sm'>No boards yet</div>
 									<button
-										onClick={() => navigate('/dashboard')}
+										onClick={handleCreateOne}
 										className='text-blue-500 text-xs hover:underline mt-1 clickable force-clickable'
 									>
 										Create one
 									</button>
 								</div>
 							) : (
-								boards.map(board => (
-									<button
-										key={board.id}
-										onClick={() => {
-											navigate(`/boards/${board.id}`)
-											onClose()
-										}}
-										className={`
-                      w-full text-left p-2 rounded-lg text-sm
-                      transition-all duration-200 force-clickable
-                      ${
-												location.pathname === `/boards/${board.id}`
-													? 'bg-blue-500/10 text-blue-700 border border-blue-200'
-													: 'text-gray-700 hover:bg-gray-100/50 border border-transparent'
-											}
-                      clickable
-                    `}
-									>
-										<div className='flex items-center gap-2'>
-											<div className='w-2 h-2 rounded-full bg-blue-500'></div>
-											<span className='truncate flex-1'>{board.name}</span>
-										</div>
-									</button>
-								))
+								<>
+									{displayedBoards.map((board, idx) => {
+										const colorClass = BOARD_COLORS[idx % BOARD_COLORS.length]
+
+										return (
+											<button
+												key={board.id}
+												onClick={() => {
+													navigate(`/boards/${board.id}`)
+													onClose()
+												}}
+												className={`w-full text-left p-2 rounded-lg text-sm transition-all duration-200 force-clickable clickable ${
+													location.pathname === `/boards/${board.id}`
+														? 'bg-blue-500/10 text-blue-700 border border-blue-200'
+														: 'text-gray-700 hover:bg-gray-100/50 border border-transparent'
+												}`}
+											>
+												<div className='flex items-center gap-3'>
+													<div
+														className={`${colorClass} w-2 h-2 rounded-full`}
+													></div>
+													<span className='truncate flex-1 ml-1'>
+														{board.name}
+													</span>
+												</div>
+											</button>
+										)
+									})}
+
+									{/* Show More/Less */}
+									{hasMoreBoards && (
+										<button
+											onClick={() => setShowAllBoards(!showAllBoards)}
+											className='w-full text-center p-2 text-xs text-blue-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-200 clickable force-clickable'
+										>
+											{showAllBoards
+												? 'Show Less'
+												: `Show More (${
+														boards.length - MAX_BOARDS_DISPLAY
+												  } more)`}
+										</button>
+									)}
+								</>
 							)}
 						</div>
 					</div>
 				</nav>
 
 				{/* User Section */}
-				<div className='p-4 border-t border-gray-200/50'>
+				<div className='p-4 border-t border-gray-200/50 flex-shrink-0'>
 					{!token ? (
 						<div className='space-y-2'>
 							<button
@@ -312,11 +399,9 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 								className='w-full flex items-center gap-2 p-2 rounded-lg bg-gray-100/50 hover:bg-gray-200/50 transition-all duration-200 clickable force-clickable border border-gray-200'
 							>
 								<img
-									src={`https://avatars.dicebear.com/api/avataaars/${encodeURIComponent(
-										userEmail || 'user'
-									)}.svg`}
+									src={getUserAvatarUrl()}
 									alt='Avatar'
-									className='w-8 h-8 rounded-lg'
+									className='w-8 h-8 rounded-lg object-cover'
 								/>
 								<div className='flex-1 min-w-0 text-left'>
 									<p className='text-sm font-medium text-gray-800 truncate'>

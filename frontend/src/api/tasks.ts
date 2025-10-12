@@ -22,10 +22,8 @@ export async function createTask(
 	priority: string = 'medium',
 	deadline?: string
 ) {
-	// Преобразуем дедлайн в правильный формат для бекенда
 	let formattedDeadline = undefined
 	if (deadline) {
-		// Создаем Date объект и преобразуем в ISO строку
 		const date = new Date(deadline)
 		formattedDeadline = date.toISOString()
 	}
@@ -51,7 +49,6 @@ export async function updateTask(
 		deadline?: string
 	}
 ) {
-	// Преобразуем дедлайн в правильный формат
 	let formattedDeadline = undefined
 	if (updates.deadline) {
 		const date = new Date(updates.deadline)

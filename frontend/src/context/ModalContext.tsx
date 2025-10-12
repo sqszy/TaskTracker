@@ -1,4 +1,3 @@
-// src/context/ModalContext/ModalProvider.tsx  (или где у тебя сейчас)
 import { useState, type ReactNode } from 'react'
 import { ModalContext } from './ModalContext/context'
 import LoginModal from '../components/LoginModal'
