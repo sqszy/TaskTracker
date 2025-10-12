@@ -66,3 +66,8 @@ export async function deleteTask(boardID: number, taskID: number) {
 	const r = await api.delete(`/boards/${boardID}/tasks/${taskID}`)
 	return r.data
 }
+
+export async function getTasksByBoard(boardID: number) {
+	const r = await api.get(`/boards/${boardID}/GetTasks`)
+	return Array.isArray(r.data) ? r.data : []
+}

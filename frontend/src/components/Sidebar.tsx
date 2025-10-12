@@ -381,28 +381,28 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 					</div>
 				</nav>
 
-				{/* User Section */}
-				<div className='p-4 border-t border-gray-200/50 flex-shrink-0'>
+				<div className='p-4 border-t border-gray-200/50 flex-shrink-0 relative'>
 					{!token ? (
 						<div className='space-y-2'>
 							<button
 								onClick={handleLogin}
-								className='w-full p-2 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 transition-all duration-200 clickable force-clickable modal-trigger text-sm'
+								className='w-full p-2 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 transition-all duration-200 clickable force-clickable text-sm'
 							>
 								Login
 							</button>
 							<button
 								onClick={handleSignup}
-								className='w-full p-2 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 text-white font-medium hover:shadow-lg transition-all duration-200 clickable force-clickable modal-trigger text-sm'
+								className='w-full p-2 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 text-white font-medium hover:shadow-lg transition-all duration-200 clickable force-clickable text-sm'
 							>
 								Sign Up
 							</button>
 						</div>
 					) : (
 						<div className='relative'>
+							{/* Avatar Button */}
 							<button
 								onClick={() => setProfileOpen(!profileOpen)}
-								className='w-full flex items-center gap-2 p-2 rounded-lg bg-gray-100/50 hover:bg-gray-200/50 transition-all duration-200 clickable force-clickable border border-gray-200'
+								className='w-full flex items-center gap-2 p-2 rounded-lg bg-white/60 backdrop-blur-md hover:bg-white/80 border border-gray-200 transition-all duration-200 clickable force-clickable shadow-sm'
 							>
 								<img
 									src={getUserAvatarUrl()}
@@ -414,16 +414,31 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 										{userEmail || 'User'}
 									</p>
 								</div>
+								<svg
+									className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${
+										profileOpen ? 'rotate-180' : ''
+									}`}
+									fill='none'
+									stroke='currentColor'
+									viewBox='0 0 24 24'
+								>
+									<path
+										strokeLinecap='round'
+										strokeLinejoin='round'
+										strokeWidth={2}
+										d='M19 9l-7 7-7-7'
+									/>
+								</svg>
 							</button>
 
 							{/* Dropdown Menu */}
 							{profileOpen && (
-								<div className='absolute bottom-full left-0 right-0 mb-2 p-2 rounded-lg bg-white border border-gray-200 shadow-lg z-50 force-clickable'>
+								<div className='absolute bottom-full left-0 right-0 mb-2 p-2 rounded-2xl bg-white/70 backdrop-blur-lg border border-gray-200 shadow-lg z-50 animate-fade-in-up'>
 									<a
 										href='https://t.me/jjkxxd'
 										target='_blank'
 										rel='noopener noreferrer'
-										className='flex items-center gap-2 w-full p-2 rounded text-gray-700 hover:bg-gray-100 transition-all duration-200 clickable text-sm'
+										className='flex items-center gap-2 w-full p-2 rounded-lg text-gray-700 hover:bg-gray-100/60 transition-all duration-200 text-sm'
 										onClick={() => setProfileOpen(false)}
 									>
 										<span>💬</span>
@@ -435,7 +450,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 											setProfileOpen(false)
 											onClose()
 										}}
-										className='flex items-center gap-2 w-full p-2 rounded text-gray-700 hover:bg-gray-100 transition-all duration-200 clickable text-sm'
+										className='flex items-center gap-2 w-full p-2 rounded-lg text-gray-700 hover:bg-gray-100/60 transition-all duration-200 text-sm'
 									>
 										<svg
 											className='w-4 h-4'
@@ -454,7 +469,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 									</button>
 									<button
 										onClick={handleLogout}
-										className='flex items-center gap-2 w-full p-2 rounded text-red-600 hover:bg-red-50 transition-all duration-200 clickable text-sm'
+										className='flex items-center gap-2 w-full p-2 rounded-lg text-red-600 hover:bg-red-50 transition-all duration-200 text-sm'
 									>
 										<svg
 											className='w-4 h-4'
