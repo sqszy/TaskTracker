@@ -4,7 +4,6 @@ import { useAuthStore } from '../store/auth'
 import { getBoards } from '../api/board'
 import type { Board } from '../types/board'
 import { useModal } from '../hooks/useModal'
-import { useUser } from '../hooks/useUser'
 import { useToast } from '../hooks/useToast'
 
 interface SidebarProps {
@@ -99,12 +98,12 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 	const token = useAuthStore(s => s.accessToken)
 	const clearTokens = useAuthStore(s => s.clear)
 	const { openLogin, openSignup } = useModal()
-	const { userEmail } = useUser()
 	const { addToast } = useToast()
 	const [boards, setBoards] = useState<Board[]>([])
 	const [loading, setLoading] = useState(false)
 	const [profileOpen, setProfileOpen] = useState(false)
 	const [showAllBoards, setShowAllBoards] = useState(false)
+	const [userEmail, setUserEmail] = useState<string>('')
 
 	const MAX_BOARDS_DISPLAY = 10
 	const displayedBoards = showAllBoards
@@ -118,6 +117,13 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 			seed
 		)}&backgroundColor=65c9ff,b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf`
 	}
+
+	useEffect(() => {
+		const email = localStorage.getItem('userEmail')
+		if (email) {
+			setUserEmail(email)
+		}
+	}, [])
 
 	useEffect(() => {
 		if (token && isOpen) {

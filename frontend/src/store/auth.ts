@@ -4,7 +4,7 @@ import { persist } from 'zustand/middleware'
 interface AuthState {
 	accessToken: string | null
 	refreshToken: string | null
-	setTokens: (access: string, refresh: string) => void
+	setTokens: (access: string, refresh: string | null) => void
 	clear: () => void
 	refreshAuth: () => Promise<boolean>
 }
@@ -15,7 +15,7 @@ export const useAuthStore = create<AuthState>()(
 			accessToken: null,
 			refreshToken: null,
 
-			setTokens: (access: string, refresh: string) => {
+			setTokens: (access: string, refresh: string | null) => {
 				set({ accessToken: access, refreshToken: refresh })
 			},
 
@@ -27,30 +27,45 @@ export const useAuthStore = create<AuthState>()(
 				const { refreshToken } = get()
 
 				if (!refreshToken) {
+					console.warn('[auth] no refresh token available')
 					return false
 				}
 
 				try {
-					const response = await fetch('http://localhost:8080/refresh', {
+					console.log('[auth] calling /refresh with refreshToken')
+					const res = await fetch('http://localhost:8080/refresh', {
 						method: 'POST',
-						headers: {
-							'Content-Type': 'application/json',
-						},
+						headers: { 'Content-Type': 'application/json' },
 						body: JSON.stringify({ refresh_token: refreshToken }),
 					})
 
-					if (response.ok) {
-						const data = await response.json()
-						set({ accessToken: data.access_token })
-						return true
+					if (!res.ok) {
+						console.warn('[auth] /refresh responded with', res.status)
+						get().clear()
+						return false
 					}
-				} catch (error) {
-					console.error('Token refresh failed:', error)
-				}
 
-				// If refresh fails, clear tokens
-				get().clear()
-				return false
+					const data = await res.json()
+					const access = data.access_token || data.accessToken || data.token
+					const refresh = data.refresh_token || data.refreshToken || null
+
+					if (!access) {
+						console.warn('[auth] /refresh response missing access token', data)
+						get().clear()
+						return false
+					}
+
+					set({
+						accessToken: access,
+						refreshToken: refresh ?? get().refreshToken,
+					})
+					console.log('[auth] token refreshed successfully')
+					return true
+				} catch (err) {
+					console.error('[auth] refreshAuth failed', err)
+					get().clear()
+					return false
+				}
 			},
 		}),
 		{

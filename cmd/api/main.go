@@ -78,17 +78,17 @@ func main() {
 
 	r := chi.NewRouter()
 
-	// Logger middleware
-	r.Use(RequestLogger)
-	r.Use(jsonContentType)
-
 	// CORS
 	r.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   []string{"http://localhost:5173"}, // адрес фронта
-		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"},
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
 		AllowCredentials: true,
 	}))
+
+	// Logger middleware
+	r.Use(RequestLogger)
+	r.Use(jsonContentType)
 
 	r.Get("/healthz", func(w http.ResponseWriter, r *http.Request) {
 		_ = json.NewEncoder(w).Encode(map[string]string{"status": "ok", "db": "up"})

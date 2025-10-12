@@ -50,9 +50,9 @@ export default function TaskCard({
 			(deadlineDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
 		)
 
-		if (diffDays < 0) return 'text-red-600 font-semibold' // Overdue
-		if (diffDays <= 3) return 'text-yellow-600' // Soon
-		return 'text-green-600' // OK
+		if (diffDays < 0) return 'text-red-600 font-semibold'
+		if (diffDays <= 3) return 'text-yellow-600'
+		return 'text-green-600'
 	}
 
 	const formatDate = (dateString?: string) => {

@@ -9,32 +9,29 @@ import NotificationsPage from './pages/NotificationsPage'
 import SettingsPage from './pages/SettingsPage'
 import { ModalProvider } from './context/ModalContext'
 import { ToastProvider } from './context/ToastContext'
-import { UserProvider } from './context/UserContext'
 import ToastContainer from './components/ToastContainer'
 
 function App() {
 	return (
 		<ToastProvider>
 			<ModalProvider>
-				<UserProvider>
-					<BrowserRouter>
-						<Routes>
-							<Route path='/login' element={<LoginPage />} />
-							<Route path='/signup' element={<SignupPage />} />
+				<BrowserRouter>
+					<Routes>
+						<Route path='/login' element={<LoginPage />} />
+						<Route path='/signup' element={<SignupPage />} />
 
-							{/* Protected Routes with Layout */}
-							<Route path='/' element={<Layout />}>
-								<Route path='dashboard' element={<Dashboard />} />
-								<Route path='boards/:id' element={<BoardDetail />} />
-								<Route path='calendar' element={<CalendarPage />} />
-								<Route path='notifications' element={<NotificationsPage />} />
-								<Route path='settings' element={<SettingsPage />} />
-								<Route index element={<Navigate to='/dashboard' />} />
-							</Route>
-						</Routes>
-						<ToastContainer />
-					</BrowserRouter>
-				</UserProvider>
+						{/* Protected Routes with Layout */}
+						<Route path='/' element={<Layout />}>
+							<Route path='dashboard' element={<Dashboard />} />
+							<Route path='boards/:id' element={<BoardDetail />} />
+							<Route path='calendar' element={<CalendarPage />} />
+							<Route path='notifications' element={<NotificationsPage />} />
+							<Route path='settings' element={<SettingsPage />} />
+							<Route index element={<Navigate to='/dashboard' />} />
+						</Route>
+					</Routes>
+					<ToastContainer />
+				</BrowserRouter>
 			</ModalProvider>
 		</ToastProvider>
 	)
