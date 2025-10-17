@@ -4,7 +4,10 @@ import { persist } from 'zustand/middleware'
 interface AuthState {
 	accessToken: string | null
 	refreshToken: string | null
+	userEmail: string | null
+
 	setTokens: (access: string, refresh: string | null) => void
+	setUserEmail: (email: string | null) => void
 	clear: () => void
 	refreshAuth: () => Promise<boolean>
 }
@@ -14,25 +17,28 @@ export const useAuthStore = create<AuthState>()(
 		(set, get) => ({
 			accessToken: null,
 			refreshToken: null,
+			userEmail: null,
 
 			setTokens: (access: string, refresh: string | null) => {
 				set({ accessToken: access, refreshToken: refresh })
 			},
 
+			setUserEmail: (email: string | null) => {
+				set({ userEmail: email })
+			},
+
 			clear: () => {
-				set({ accessToken: null, refreshToken: null })
+				set({ accessToken: null, refreshToken: null, userEmail: null })
 			},
 
 			refreshAuth: async (): Promise<boolean> => {
 				const { refreshToken } = get()
 
 				if (!refreshToken) {
-					console.warn('[auth] no refresh token available')
 					return false
 				}
 
 				try {
-					console.log('[auth] calling /refresh with refreshToken')
 					const res = await fetch('http://localhost:8080/refresh', {
 						method: 'POST',
 						headers: { 'Content-Type': 'application/json' },
@@ -40,7 +46,6 @@ export const useAuthStore = create<AuthState>()(
 					})
 
 					if (!res.ok) {
-						console.warn('[auth] /refresh responded with', res.status)
 						get().clear()
 						return false
 					}
@@ -50,7 +55,6 @@ export const useAuthStore = create<AuthState>()(
 					const refresh = data.refresh_token || data.refreshToken || null
 
 					if (!access) {
-						console.warn('[auth] /refresh response missing access token', data)
 						get().clear()
 						return false
 					}
@@ -59,7 +63,6 @@ export const useAuthStore = create<AuthState>()(
 						accessToken: access,
 						refreshToken: refresh ?? get().refreshToken,
 					})
-					console.log('[auth] token refreshed successfully')
 					return true
 				} catch (err) {
 					console.error('[auth] refreshAuth failed', err)
@@ -70,6 +73,11 @@ export const useAuthStore = create<AuthState>()(
 		}),
 		{
 			name: 'auth-storage',
+			partialize: state => ({
+				accessToken: state.accessToken,
+				refreshToken: state.refreshToken,
+				userEmail: state.userEmail,
+			}),
 		}
 	)
 )

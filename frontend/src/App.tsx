@@ -1,7 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import Layout from './components/Layout'
-import LoginPage from './pages/LoginPage'
-import SignupPage from './pages/SignupPage'
+
 import Dashboard from './pages/Dashboard'
 import BoardDetail from './pages/BoardDetail'
 import CalendarPage from './pages/CalendarPage'
@@ -17,10 +16,6 @@ function App() {
 			<ModalProvider>
 				<BrowserRouter>
 					<Routes>
-						<Route path='/login' element={<LoginPage />} />
-						<Route path='/signup' element={<SignupPage />} />
-
-						{/* Protected Routes with Layout */}
 						<Route path='/' element={<Layout />}>
 							<Route path='dashboard' element={<Dashboard />} />
 							<Route path='boards/:id' element={<BoardDetail />} />

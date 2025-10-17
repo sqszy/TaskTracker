@@ -103,7 +103,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 	const [loading, setLoading] = useState(false)
 	const [profileOpen, setProfileOpen] = useState(false)
 	const [showAllBoards, setShowAllBoards] = useState(false)
-	const [userEmail, setUserEmail] = useState<string>('')
+	const userEmail = useAuthStore(s => s.userEmail) ?? ''
 
 	const MAX_BOARDS_DISPLAY = 10
 	const displayedBoards = showAllBoards
@@ -117,13 +117,6 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 			seed
 		)}&backgroundColor=65c9ff,b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf`
 	}
-
-	useEffect(() => {
-		const email = localStorage.getItem('userEmail')
-		if (email) {
-			setUserEmail(email)
-		}
-	}, [])
 
 	useEffect(() => {
 		if (token && isOpen) {
@@ -181,8 +174,12 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
 	const handleLogout = () => {
 		clearTokens()
-		localStorage.removeItem('userEmail')
+
+		setBoards([])
+		window.dispatchEvent(new CustomEvent('boards:loaded', { detail: [] }))
+
 		navigate('/dashboard')
+		addToast('You have been logged out')
 		onClose()
 		setProfileOpen(false)
 	}
@@ -197,7 +194,6 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 			openLogin()
 			return
 		}
-		console.log('Dispatching open:createBoard event')
 		window.dispatchEvent(new CustomEvent('open:createBoard'))
 		onClose()
 	}

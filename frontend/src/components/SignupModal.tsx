@@ -19,6 +19,7 @@ export default function SignupModal({
 	const [password, setPassword] = useState('')
 	const [loading, setLoading] = useState(false)
 	const setTokens = useAuthStore(s => s.setTokens)
+	const setUserEmail = useAuthStore(s => s.setUserEmail)
 	const { addToast } = useToast()
 
 	const submit = async () => {
@@ -38,8 +39,7 @@ export default function SignupModal({
 
 			const loginData = await login({ email, password })
 			setTokens(loginData.access_token, loginData.refresh_token)
-
-			localStorage.setItem('userEmail', email)
+			setUserEmail(email)
 
 			onClose()
 			setEmail('')

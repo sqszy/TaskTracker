@@ -68,7 +68,6 @@ export default function CalendarPage() {
 	const handlePrevMonth = () => setCurrentMonth(subMonths(currentMonth, 1))
 	const handleNextMonth = () => setCurrentMonth(addMonths(currentMonth, 1))
 
-	// handlers for tooltip: compute fixed coords from element rect
 	const showTooltip = (e: React.MouseEvent, items: Task[]) => {
 		const target = e.currentTarget as HTMLElement
 		const rect = target.getBoundingClientRect()
@@ -137,7 +136,7 @@ export default function CalendarPage() {
 							className={`relative flex flex-col items-start rounded-2xl p-3 h-28 cursor-pointer transition-all duration-300 ${
 								isCurrentMonth
 									? 'bg-white/40 backdrop-blur-md border border-white/60 hover:shadow-lg hover:-translate-y-1 hover:border-blue-400/60'
-									: 'bg-white/20 border border-white/40 text-gray-400 backdrop-blur-sm'
+									: 'bg-white/20 border border-white/40 text-gray-400 backdrop-blur-sm opacity-40'
 							} ${
 								isToday
 									? 'ring-2 ring-blue-400/80 shadow-[0_0_15px_rgba(59,130,246,0.25)] scale-[1.02]'

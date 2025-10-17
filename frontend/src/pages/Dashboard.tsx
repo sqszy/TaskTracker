@@ -217,6 +217,7 @@ export default function Dashboard() {
 						value={search}
 						onChange={setSearch}
 						placeholder='Search boards by name...'
+						debounceMs={200}
 					/>
 				</div>
 			</div>

@@ -38,7 +38,6 @@ api.interceptors.response.use(
 			originalRequest._retry = true
 
 			if (!refreshPromise) {
-				console.log('[api] starting token refresh')
 				refreshPromise = useAuthStore
 					.getState()
 					.refreshAuth()

@@ -11,9 +11,7 @@ export default function NotificationsPage() {
 				<h2 className='text-2xl font-bold text-gray-900 mb-4'>
 					Notifications Center
 				</h2>
-				<p className='text-gray-600 mb-6'>
-					Notifications system coming soon...
-				</p>
+				<p className='text-gray-600 mb-6'>Notifications system</p>
 				<button className='px-6 py-3 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 text-white font-semibold hover:shadow-lg transition-all duration-200'>
 					View Updates
 				</button>

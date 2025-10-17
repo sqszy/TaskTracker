@@ -191,6 +191,7 @@ export default function BoardDetail() {
 						value={search}
 						onChange={setSearch}
 						placeholder='Search tasks...'
+						debounceMs={500}
 					/>
 
 					<div className='flex items-center gap-3'>
@@ -278,13 +279,13 @@ export default function BoardDetail() {
 										No tasks yet
 									</h3>
 									<p className='text-gray-600 mb-6'>
-										Create your first task to get started
+										Create your task to get started
 									</p>
 									<button
 										onClick={() => openTaskModal()}
 										className='px-6 py-3 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 text-white font-semibold hover:shadow-lg transition-all duration-200'
 									>
-										Create First Task
+										Create Task
 									</button>
 								</div>
 							) : (

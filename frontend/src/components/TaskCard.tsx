@@ -57,7 +57,9 @@ export default function TaskCard({
 
 	const formatDate = (dateString?: string) => {
 		if (!dateString) return 'No deadline'
-		return new Date(dateString).toLocaleDateString()
+		const d = new Date(dateString)
+		if (isNaN(d.getTime())) return 'Invalid date'
+		return d.toLocaleDateString('en-GB')
 	}
 
 	const handleClick = (e: React.MouseEvent) => {
