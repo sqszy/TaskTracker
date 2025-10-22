@@ -6,12 +6,14 @@ interface TaskCardProps {
 	onUpdate?: (taskId: number, updates: Partial<Task>) => void
 	onClick?: (task: Task) => void
 	compact?: boolean
+	solid?: boolean
 }
 
 export default function TaskCard({
 	task,
 	onClick,
 	compact = false,
+	solid = false,
 }: TaskCardProps) {
 	const getPriorityColor = (priority: TaskPriority) => {
 		switch (priority) {
@@ -70,7 +72,11 @@ export default function TaskCard({
 	if (compact) {
 		return (
 			<div
-				className='p-3 rounded-xl bg-white/70 backdrop-blur-md shadow-sm border border-gray-200/50 hover:shadow-md transition-all duration-200 group cursor-pointer'
+				className={`p-3 rounded-xl shadow-sm border ${
+					solid
+						? 'bg-white backdrop-blur-sm border-gray-200'
+						: 'bg-white/70 backdrop-blur-md border-gray-200/50'
+				} hover:shadow-md transition-all duration-200 group cursor-pointer`}
 				onClick={handleClick}
 			>
 				<div className='flex justify-between items-start'>
@@ -96,7 +102,11 @@ export default function TaskCard({
 
 	return (
 		<div
-			className='p-4 rounded-2xl bg-white/20 backdrop-blur-md border border-white/30 shadow-sm hover:shadow-md transition-all duration-200 group cursor-pointer liquid-glass relative z-20'
+			className={`p-4 rounded-2xl border shadow-sm hover:shadow-md transition-all duration-200 group cursor-pointer relative z-20 ${
+				solid
+					? 'bg-white backdrop-blur-sm border-gray-200'
+					: 'bg-white/20 backdrop-blur-md border-white/30 liquid-glass'
+			}`}
 			onClick={handleClick}
 		>
 			{/* Header */}

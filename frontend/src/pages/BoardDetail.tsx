@@ -186,7 +186,7 @@ export default function BoardDetail() {
 				</div>
 
 				{/* Controls Bar */}
-				<div className='flex flex-wrap gap-4 items-center justify-between p-4 rounded-xl bg-white/80 backdrop-blur-md border border-gray-200'>
+				<div className='control-bar-glass'>
 					<SearchBar
 						value={search}
 						onChange={setSearch}
@@ -295,6 +295,7 @@ export default function BoardDetail() {
 										task={task}
 										onUpdate={handleUpdateTask}
 										onClick={openTaskModal}
+										solid={true}
 									/>
 								))
 							)}

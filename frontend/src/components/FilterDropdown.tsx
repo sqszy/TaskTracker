@@ -55,89 +55,12 @@ export default function FilterDropdown({
 		onFiltersChange({ ...filters, [key]: value as unknown })
 	}
 
-	const dropdownNode = isOpen ? (
-		<>
-			{/* backdrop */}
-			<div className='fixed inset-0 z-40' onClick={close} aria-hidden />
-			<div
-				role='dialog'
-				aria-modal='true'
-				style={{
-					position: 'fixed',
-					top: coords?.top ?? 0,
-					left: coords?.left ?? 0,
-					width: coords?.width ?? 400,
-				}}
-				className='z-[1200] p-6 rounded-xl bg-white/95 backdrop-blur-md border border-gray-200 shadow-xl min-w-[280px]'
-			>
-				<div className='space-y-6'>
-					<div>
-						<label className='block text-base font-medium text-gray-700 mb-3'>
-							Status
-						</label>
-						<select
-							value={filters.status}
-							onChange={e => updateFilter('status', e.target.value)}
-							className='w-full p-3 text-base rounded-lg border border-gray-300 bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent'
-							onKeyDown={e => {
-								if (e.key === 'Enter') e.currentTarget.blur()
-							}}
-						>
-							<option value=''>All Statuses</option>
-							<option value='todo'>To Do</option>
-							<option value='in_progress'>In Progress</option>
-							<option value='need_review'>Need Review</option>
-							<option value='done'>Done</option>
-						</select>
-					</div>
-
-					<div>
-						<label className='block text-base font-medium text-gray-700 mb-3'>
-							Priority
-						</label>
-						<select
-							value={filters.priority}
-							onChange={e => updateFilter('priority', e.target.value)}
-							className='w-full p-3 text-base rounded-lg border border-gray-300 bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent'
-							onKeyDown={e => {
-								if (e.key === 'Enter') e.currentTarget.blur()
-							}}
-						>
-							<option value=''>All Priorities</option>
-							<option value='low'>Low</option>
-							<option value='medium'>Medium</option>
-							<option value='high'>High</option>
-						</select>
-					</div>
-
-					<div>
-						<label className='block text-base font-medium text-gray-700 mb-3'>
-							Deadline
-						</label>
-						<select
-							value={filters.deadline}
-							onChange={e => updateFilter('deadline', e.target.value)}
-							className='w-full p-3 text-base rounded-lg border border-gray-300 bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent'
-							onKeyDown={e => {
-								if (e.key === 'Enter') e.currentTarget.blur()
-							}}
-						>
-							<option value=''>All Tasks</option>
-							<option value='with'>With Deadline</option>
-							<option value='without'>Without Deadline</option>
-						</select>
-					</div>
-				</div>
-			</div>
-		</>
-	) : null
-
 	return (
 		<div className='relative'>
 			<button
 				ref={btnRef}
 				onClick={() => (isOpen ? close() : openDropdown())}
-				className='px-4 py-2 rounded-xl border border-gray-300 bg-white/80 hover:bg-white transition-all duration-200 flex items-center gap-2 clickable'
+				className='px-4 py-2 rounded-xl border border-gray-300 bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-all duration-200 flex items-center gap-2 clickable'
 				onKeyDown={e => {
 					if (e.key === 'Enter') {
 						e.preventDefault()
@@ -178,7 +101,79 @@ export default function FilterDropdown({
 				</svg>
 			</button>
 
-			{dropdownNode && createPortal(dropdownNode, document.body)}
+			{isOpen &&
+				createPortal(
+					<>
+						{/* backdrop для закрытия при клике */}
+						<div className='fixed inset-0 z-40' onClick={close} aria-hidden />
+
+						<div
+							role='dialog'
+							aria-modal='true'
+							style={{
+								position: 'fixed',
+								top: coords?.top ?? 0,
+								left: coords?.left ?? 0,
+								width: coords?.width ?? 400,
+							}}
+							className='z-[1200] p-6 rounded-xl bg-white/20 backdrop-blur-md border border-white/30 shadow-xl liquid-glass min-w-[280px]'
+						>
+							<div className='space-y-6'>
+								{/* Status */}
+								<div>
+									<label className='block text-base font-medium text-gray-700 mb-3'>
+										Status
+									</label>
+									<select
+										value={filters.status}
+										onChange={e => updateFilter('status', e.target.value)}
+										className='w-full p-3 text-base rounded-lg border border-gray-300 bg-white/50 focus:ring-2 focus:ring-blue-500 focus:border-transparent'
+									>
+										<option value=''>All Statuses</option>
+										<option value='todo'>To Do</option>
+										<option value='in_progress'>In Progress</option>
+										<option value='need_review'>Need Review</option>
+										<option value='done'>Done</option>
+									</select>
+								</div>
+
+								{/* Priority */}
+								<div>
+									<label className='block text-base font-medium text-gray-700 mb-3'>
+										Priority
+									</label>
+									<select
+										value={filters.priority}
+										onChange={e => updateFilter('priority', e.target.value)}
+										className='w-full p-3 text-base rounded-lg border border-gray-300 bg-white/50 focus:ring-2 focus:ring-blue-500 focus:border-transparent'
+									>
+										<option value=''>All Priorities</option>
+										<option value='low'>Low</option>
+										<option value='medium'>Medium</option>
+										<option value='high'>High</option>
+									</select>
+								</div>
+
+								{/* Deadline */}
+								<div>
+									<label className='block text-base font-medium text-gray-700 mb-3'>
+										Deadline
+									</label>
+									<select
+										value={filters.deadline}
+										onChange={e => updateFilter('deadline', e.target.value)}
+										className='w-full p-3 text-base rounded-lg border border-gray-300 bg-white/50 focus:ring-2 focus:ring-blue-500 focus:border-transparent'
+									>
+										<option value=''>All Tasks</option>
+										<option value='with'>With Deadline</option>
+										<option value='without'>Without Deadline</option>
+									</select>
+								</div>
+							</div>
+						</div>
+					</>,
+					document.body
+				)}
 		</div>
 	)
 }
