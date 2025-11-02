@@ -22,15 +22,17 @@ TaskTracker — учебно‑практический трекер задач:
 
 ---
 
-## Технологии и стек
+## Архитектура и стек
 
-- **Backend**: Go
-- **Frontend**: TypeScript (React)
-- **Database**: PostgreSQL
-- **Cache**: Redis (для хранения refresh‑токенов)
-- **SQL** codegen: sqlc
-- **Контейнеризация**: Docker, Docker Compose
-- **Авторизация**: JWT (access + refresh)
+| Слой       | Технологии                                         |
+| ---------- | -------------------------------------------------- |
+| Backend    | **Go**, REST API, SQLC, Clean Architecture         |
+| Frontend   | **React + TypeScript**                             |
+| Database   | **PostgreSQL** (обработка миграций + SQLC-codegen) |
+| Cache/Auth | **Redis** — хранение refresh-токенов               |
+| Testing    | **Testify**, mocks, HTTP-tests                     |
+| CI/CD      | **GitHub Actions** (go vet, lint, tests)           |
+| Deployment | Docker, Docker Compose                             |
 
 ---
 
@@ -58,6 +60,14 @@ docker-compose up --build
 Backend доступен на http://localhost:8080
 
 Frontend доступен на http://localhost:5173
+
+### 5. Тесты
+
+Тестирование хендлеров
+
+```
+go test ./... -v
+```
 
 ---
 
