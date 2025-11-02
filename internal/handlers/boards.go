@@ -14,10 +14,10 @@ import (
 )
 
 type BoardHandler struct {
-	queries *db.Queries
+	queries db.Querier
 }
 
-func NewBoardHandler(q *db.Queries) *BoardHandler {
+func NewBoardHandler(q db.Querier) *BoardHandler {
 	return &BoardHandler{queries: q}
 }
 
@@ -55,7 +55,10 @@ func (h *BoardHandler) CreateBoard(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	log.Println("[CreateBoard] board created:", board.ID, "by user", userID)
-	json.NewEncoder(w).Encode(resp)
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
 }
 
 // GET /GetBoards
@@ -85,7 +88,10 @@ func (h *BoardHandler) GetBoards(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	log.Println("[GetBoard] by user", userID)
-	json.NewEncoder(w).Encode(resp)
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
 }
 
 // PATCH boards/{boardID}
@@ -134,7 +140,10 @@ func (h *BoardHandler) PatchBoard(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	log.Println("[PatchBoard] updated board:", board.ID)
-	_ = json.NewEncoder(w).Encode(resp)
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
 }
 
 // DELETE /boards/{boardID}
@@ -167,5 +176,8 @@ func (h *BoardHandler) DeleteBoard(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	log.Println("[DeleteBoard] deleted board:", boardID)
-	_ = json.NewEncoder(w).Encode(map[string]bool{"success": true})
+	if err := json.NewEncoder(w).Encode(map[string]bool{"success": true}); err != nil {
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
 }

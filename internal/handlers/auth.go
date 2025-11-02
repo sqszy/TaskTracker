@@ -14,11 +14,11 @@ import (
 )
 
 type AuthHandler struct {
-	queries *db.Queries
+	queries db.Querier
 	authSvc *auth.Service
 }
 
-func NewAuthHandler(q *db.Queries, a *auth.Service) *AuthHandler {
+func NewAuthHandler(q db.Querier, a *auth.Service) *AuthHandler {
 	return &AuthHandler{queries: q, authSvc: a}
 }
 
@@ -58,7 +58,10 @@ func (h *AuthHandler) Signup(w http.ResponseWriter, r *http.Request) {
 		Email: user.Email,
 	}
 	log.Println("User signed up:", user.Email)
-	json.NewEncoder(w).Encode(resp)
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		http.Error(w, "failed to sign up", http.StatusInternalServerError)
+		return
+	}
 }
 
 func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
@@ -91,7 +94,10 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		ExpiresIn:    tp.ExpiresIn,
 	}
 	log.Println("User logged in:", req.Email)
-	json.NewEncoder(w).Encode(resp)
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		http.Error(w, "failed to log in", http.StatusInternalServerError)
+		return
+	}
 }
 
 func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
@@ -108,7 +114,10 @@ func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	log.Println("Refresh done")
-	json.NewEncoder(w).Encode(tp)
+	if err := json.NewEncoder(w).Encode(tp); err != nil {
+		http.Error(w, "failed to refresh", http.StatusInternalServerError)
+		return
+	}
 }
 
 func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
@@ -125,5 +134,8 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Println("Logout done")
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]bool{"success": true})
+	if err := json.NewEncoder(w).Encode(map[string]bool{"success": true}); err != nil {
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
 }

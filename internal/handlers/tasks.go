@@ -15,10 +15,10 @@ import (
 )
 
 type TaskHandler struct {
-	queries *db.Queries
+	queries db.Querier
 }
 
-func NewTaskHandler(q *db.Queries) *TaskHandler {
+func NewTaskHandler(q db.Querier) *TaskHandler {
 	return &TaskHandler{queries: q}
 }
 
